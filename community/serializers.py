@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from user.models import User
 from .models import Community, CommunityAdmin, ForbiddenWord
 
 
@@ -7,11 +9,17 @@ class CommunitySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Community
-        fields = ["id", "title", "introduction", "is_approval", "admin",]
+        fields = [
+            "id",
+            "title",
+            "introduction",
+            "is_approval",
+            "admin",
+        ]
 
-    def get_admin(self, obj):        
+    def get_admin(self, obj):
         admin = CommunityAdmin.objects.filter(community=obj)
-        admin_serializer = CommunityAdminerializer(admin, many=True)
+        admin_serializer = CommunityAdminSerializer(admin, many=True)
         return admin_serializer.data
 
 
@@ -24,24 +32,44 @@ class CommunityCreateSerializer(serializers.ModelSerializer):
 class CommunityUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Community
-        fields = ["introduction",]
+        fields = [
+            "introduction",
+        ]
 
 
 class CommunityAdminCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CommunityAdmin
-        fields = ["user",]
+        fields = [
+            "user",
+        ]
 
 
-class CommunityAdminerializer(serializers.ModelSerializer):
+class CommunityAdminSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
 
     class Meta:
         model = CommunityAdmin
-        fields = ["user", "is_comuadmin", "is_subadmin",]
+        fields = [
+            "user",
+            "is_comuadmin",
+            "is_subadmin",
+        ]
 
 
 class ForbiddenWordSerializer(serializers.ModelSerializer):
     class Meta:
         model = ForbiddenWord
-        fields = ["word",]
+        fields = [
+            "word",
+        ]
+
+
+class SearchUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "name",
+        ]
