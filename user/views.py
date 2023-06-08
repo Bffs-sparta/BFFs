@@ -20,6 +20,14 @@ import os
 from decouple import config
 from .jwt_tokenserializer import CustomTokenObtainPairSerializer
 
+from user.serializers import (
+    UserSerializer,
+    UserProfileSerializer,
+    UserProfileUpdateSerializer,
+)
+
+from .models import User, Profile
+
 
 class SendEmailView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -64,7 +72,8 @@ class SendEmailView(APIView):
                 timer = 600
                 Timer(timer, self.timer_delet, (email,)).start()  # 테스트코드에서 있으면 10분동안 멈춤
 
-                return Response({"code": code}, status=status.HTTP_200_OK)  # 테스트용
+                # 테스트용
+                return Response({"code": code}, status=status.HTTP_200_OK)
                 # return Response({'success':'success'},status=status.HTTP_200_OK)
 
 
@@ -95,7 +104,7 @@ class VerificationEmailView(APIView):
 
 
 class SignupView(APIView):
-    def post(slef, request):
+    def post(self, request):
         user_data = UserCreateSerializer(data=request.data)
         user_data.is_valid(raise_exception=True)
         user_data.save()
@@ -104,3 +113,49 @@ class SignupView(APIView):
 
 class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+
+class ProfileView(APIView):
+    # def get_object(self, user_id):
+    #     return get_object_or_404(User, id=user_id)
+
+    def get(self, request, user_id):
+        # user = User.objects.get(id=user_id)
+        # serializer = UserSerializer(user)
+        # print(f'"⭐️", {serializer.data}')
+        # return Response(serializer.data, status=status.HTTP_200_OK)
+        profile = Profile.objects.get(id=user_id)
+        serializer = UserProfileSerializer(profile)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, user_id):
+        profile = Profile.objects.get(user_id=user_id)
+        if profile.user == request.user:
+            serializer = UserProfileUpdateSerializer(
+                profile, data=request.data, partial=True
+            )
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": "수정완료!"}, status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            return Response({"message": "권한이 없습니다!"}, status=status.HTTP_403_FORBIDDEN)
+
+
+class GuestBookView(APIView):
+    def get(self, request):
+        pass
+
+    def post(self, request):
+        pass
+
+
+class GuestBookDetailView(APIView):
+    def patch(self, request):
+        pass
+
+    def delete(self, request):
+        pass
