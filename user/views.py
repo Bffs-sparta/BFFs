@@ -144,6 +144,22 @@ class ProfileView(APIView):
         else:
             return Response({"message": "권한이 없습니다!"}, status=status.HTTP_403_FORBIDDEN)
 
+    def delete(self, request):
+        profile = Profile.objects.get(user_id=user_id)
+        datas = request.data.copy()
+        datas["is_active"] = False
+        serializer = UserDelSerializer(profile_user, data=datas)
+        if profile_user.check_password(request.data.get("password")):
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    {"message": "계정 비활성화 완료"}, status=status.HTTP_204_NO_CONTENT
+                )
+        else:
+            return Response(
+                {"message": f"패스워드가 다릅니다"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 class GuestBookView(APIView):
     def get(self, request):
