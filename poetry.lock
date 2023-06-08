@@ -173,15 +173,19 @@ files = [
 Django = ">=3.2"
 
 [[package]]
-name = "django-restframework"
-version = "0.0.1"
-description = "django-restframework"
+name = "django-cron"
+version = "0.6.0"
+description = "Running python crons in a Django project"
 category = "main"
 optional = false
 python-versions = "*"
 files = [
-    {file = "django-restframework-0.0.1.tar.gz", hash = "sha256:2bec9265463693ada558ad9a58c31f6f3de005a932fbfeaadf983c5c9f3b7058"},
+    {file = "django-cron-0.6.0.tar.gz", hash = "sha256:dc3c0d3433a2e4e7012f77f6d8415ad90367ba068649db2674325bc36f935841"},
+    {file = "django_cron-0.6.0-py3-none-any.whl", hash = "sha256:016203554748512b7f19d7363b4fde8741c6ff63fe8a15051f3031f4a0506a41"},
 ]
+
+[package.dependencies]
+Django = ">=3.2"
 
 [[package]]
 name = "djangorestframework"
@@ -599,4 +603,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.3)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "a9c054d3c7dfa09bce8b1903e6d48459d235f112e86f8de9bc75710ec3f1d926"
+content-hash = "d30bf81db46e130388e6db72361dff84f056a61de20d7857981310bba59d0ec1"

@@ -17,6 +17,7 @@ from threading import Timer
 from .validators import email_validator
 import requests
 import os
+from decouple import config
 
 
 class SendEmailView(APIView):
@@ -42,22 +43,21 @@ class SendEmailView(APIView):
                 {"error": "이메일 형식이 올바르지 않습니다."}, status=status.HTTP_400_BAD_REQUEST
             )
         else:
-            user = get_object_or_404(User, email=email)
-            if user:
+            if User.objects.filter(email=email).exists():
                 return Response(
                     {"error": "이미 가입한 회원입니다."}, status=status.HTTP_400_BAD_REQUEST
                 )
             else:
                 subject = "BFFs 이메일 인증코드 메일입니다."
-                from_email = os.environ.get("EMAIL")
+                from_email = config("EMAIL")
                 code = get_random_string(length=6)
                 if Verify.objects.filter(email=email).exists():
                     email_list = Verify.objects.filter(email=email)
                     email_list.delete()
                 html_content = render_to_string("verfication.html", {"code": code})
-                email = EmailMessage(subject, html_content, from_email, [email])
-                email.content_subtype = "html"
-                email.send()
+                send_email = EmailMessage(subject, html_content, from_email, [email])
+                send_email.content_subtype = "html"
+                send_email.send()
                 Verify.objects.create(email=email, code=code)
 
                 timer = 600
@@ -84,7 +84,7 @@ class VerificationEmailView(APIView):
         else:
             verify = Verify.objects.filter(email=email, code=code).first()
             if verify:
-                verify.verification = True
+                verify.is_verify = True
                 verify.save()
                 return Response({"msg": "메일인증이 완료되었습니다"}, status=status.HTTP_200_OK)
             else:

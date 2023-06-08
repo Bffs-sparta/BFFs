@@ -31,6 +31,9 @@ class MyUserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
+    class Meta:
+        db_table = "user"
+
     email = models.EmailField(
         verbose_name="email address",
         max_length=255,
@@ -47,7 +50,7 @@ class User(AbstractBaseUser):
             )
         ],
     )
-
+    last_login = models.DateTimeField(blank=True, null=True)
     login_count = models.IntegerField(default=0)
     banned_at = models.DateTimeField(blank=True, null=True)
     is_dormant = models.BooleanField(default=False)
@@ -83,6 +86,9 @@ class User(AbstractBaseUser):
 
 
 class Verify(models.Model):
+    class Meata:
+        db_table = "verify"
+
     email = models.EmailField()
     code = models.CharField(max_length=6)
     is_verify = models.BooleanField(default=False)
