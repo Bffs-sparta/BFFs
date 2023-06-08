@@ -20,7 +20,11 @@ import os
 from decouple import config
 from .jwt_tokenserializer import CustomTokenObtainPairSerializer
 
-from user.serializers import UserSerializer, UserProfileSerializer, UserProfileUpdateSerializer
+from user.serializers import (
+    UserSerializer,
+    UserProfileSerializer,
+    UserProfileUpdateSerializer,
+)
 
 from .models import User, Profile
 
@@ -59,17 +63,14 @@ class SendEmailView(APIView):
                 if Verify.objects.filter(email=email).exists():
                     email_list = Verify.objects.filter(email=email)
                     email_list.delete()
-                html_content = render_to_string(
-                    "verfication.html", {"code": code})
-                send_email = EmailMessage(
-                    subject, html_content, from_email, [email])
+                html_content = render_to_string("verfication.html", {"code": code})
+                send_email = EmailMessage(subject, html_content, from_email, [email])
                 send_email.content_subtype = "html"
                 send_email.send()
                 Verify.objects.create(email=email, code=code)
 
                 timer = 600
-                Timer(timer, self.timer_delet, (email,)
-                      ).start()  # 테스트코드에서 있으면 10분동안 멈춤
+                Timer(timer, self.timer_delet, (email,)).start()  # 테스트코드에서 있으면 10분동안 멈춤
 
                 # 테스트용
                 return Response({"code": code}, status=status.HTTP_200_OK)
@@ -124,20 +125,15 @@ class ProfileView(APIView):
         # print(f'"⭐️", {serializer.data}')
         # return Response(serializer.data, status=status.HTTP_200_OK)
         profile = Profile.objects.get(id=user_id)
-        print(f'"⭐️", {profile}')
         serializer = UserProfileSerializer(profile)
-        print(f'"⭐️", {serializer.data}')
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, user_id):
         profile = Profile.objects.get(user_id=user_id)
-        # print(f'"⭐️⭐️", {profile.user}')
-        # me = request.user
-        # print(f'"⭐️⭐️⭐️", {me}')
         if profile.user == request.user:
             serializer = UserProfileUpdateSerializer(
-                profile, data=request.data, partial=True)
-            print(f'"⭐️", {serializer}')
+                profile, data=request.data, partial=True
+            )
             if serializer.is_valid():
                 serializer.save()
                 return Response({"message": "수정완료!"}, status=status.HTTP_200_OK)

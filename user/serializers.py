@@ -29,11 +29,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
-        fields = ('id', 'email', 'name', 'password')
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ("id", "email", "name", "password")
+        extra_kwargs = {"password": {"write_only": True}}
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -43,8 +42,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ("user_name", "user_email", "nickname",
-                  "region", "introduction", "profileimage")
+        fields = (
+            "user_email",
+            "user_name",
+            "nickname",
+            "region",
+            "introduction",
+            "profileimage",
+        )
 
     def get_user_name(self, obj):
         return obj.user.name
@@ -58,8 +63,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ("user_email", "nickname",
-                  "region", "introduction", "profileimage")
+        fields = ("user_email", "nickname", "region", "introduction", "profileimage")
         extra_kwargs = {
             "nickname": {
                 "error_messages": {
