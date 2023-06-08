@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from user.models import User
 from .models import Community, CommunityAdmin, ForbiddenWord
 
 
@@ -17,7 +19,7 @@ class CommunitySerializer(serializers.ModelSerializer):
 
     def get_admin(self, obj):
         admin = CommunityAdmin.objects.filter(community=obj)
-        admin_serializer = CommunityAdminerializer(admin, many=True)
+        admin_serializer = CommunityAdminSerializer(admin, many=True)
         return admin_serializer.data
 
 
@@ -43,7 +45,7 @@ class CommunityAdminCreateSerializer(serializers.ModelSerializer):
         ]
 
 
-class CommunityAdminerializer(serializers.ModelSerializer):
+class CommunityAdminSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()
 
     class Meta:
@@ -60,4 +62,14 @@ class ForbiddenWordSerializer(serializers.ModelSerializer):
         model = ForbiddenWord
         fields = [
             "word",
+        ]
+
+
+class SearchUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "email",
+            "name",
         ]

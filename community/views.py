@@ -1,9 +1,11 @@
-from rest_framework import permissions, status
+from rest_framework import permissions, status, filters
+from rest_framework.generics import ListAPIView
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # from feed.models import Feed
+from user.models import User
 from .models import Community, CommunityAdmin, ForbiddenWord
 from .serializers import (
     CommunitySerializer,
@@ -11,6 +13,7 @@ from .serializers import (
     CommunityUpdateSerializer,
     CommunityAdminCreateSerializer,
     ForbiddenWordSerializer,
+    SearchUserSerializer,
 )
 
 
@@ -18,7 +21,7 @@ class CommunityView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request):
-        """커뮤니티 조회"""
+        """커뮤니티 조회 및 어드민 조회"""
         communities = Community.objects.all()
         serializer = CommunitySerializer(communities, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -39,7 +42,8 @@ class CommunityView(APIView):
     def put(self, request, comu_id):
         """커뮤니티 수정"""
         community = get_object_or_404(Community, id=comu_id)
-        if community.comu.user == request.user:
+        community_admin = community.comu.get(is_comuadmin=True).user
+        if community_admin == request.user:
             serializer = CommunityUpdateSerializer(community, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -53,7 +57,8 @@ class CommunityView(APIView):
     def delete(self, request, comu_id):
         """커뮤니티 삭제"""
         community = get_object_or_404(Community, id=comu_id)
-        if community.comu.user == request.user:
+        community_admin = community.comu.get(is_comuadmin=True).user
+        if community_admin == request.user:
             community.delete()
             return Response({"msg": "삭제가 완료되었습니다."}, status=status.HTTP_204_NO_CONTENT)
         else:
@@ -72,7 +77,7 @@ class CommunitySubAdminView(APIView):
                 return Response(
                     {"msg": "이미 관리자로 등록된 유저입니다."}, status=status.HTTP_400_BAD_REQUEST
                 )
-            elif community.comu.count() > 4:
+            elif community.comu.filter(community_id=comu_id).count() > 3:
                 return Response(
                     {"msg": "서브 관리자는 최대 3명입니다."}, status=status.HTTP_400_BAD_REQUEST
                 )
@@ -82,6 +87,23 @@ class CommunitySubAdminView(APIView):
                 serializer.save(community=community, is_subadmin=True)
                 return Response(
                     {"msg": "서브 관리자 등록이 완료되었습니다."}, status=status.HTTP_201_CREATED
+                )
+        else:
+            return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    def delete(self, request, comu_id):
+        """서브 어드민 삭제"""
+        community = Community.objects.get(id=comu_id)
+        community_admin = community.comu.get(is_comuadmin=True).user
+        if community_admin == request.user:
+            if community.comu.filter(user_id=request.data["user"]).exists():
+                community.comu.filter(user_id=request.data["user"]).delete()
+                return Response(
+                    {"msg": "서브 관리자 삭제가 완료되었습니다."}, status=status.HTTP_200_OK
+                )
+            else:
+                return Response(
+                    {"msg": "존재하지 않는 서브 관리자입니다."}, status=status.HTTP_400_BAD_REQUEST
                 )
         else:
             return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
@@ -112,3 +134,21 @@ class CommunityForbiddenView(APIView):
 class CommunityBookmarkView(APIView):
     def get(self, request, comu_id):
         pass
+
+
+class SearchCommunityView(ListAPIView):
+    """커뮤니티 조회 및 검색"""
+
+    queryset = Community.objects.all()
+    serializer_class = CommunityCreateSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["title"]
+
+
+class SearchUserView(ListAPIView):
+    """유저 조회 및 검색"""
+
+    queryset = User.objects.all()
+    serializer_class = SearchUserSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["email"]
