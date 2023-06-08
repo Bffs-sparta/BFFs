@@ -10,6 +10,8 @@ class Community(models.Model):
     introduction = models.TextField()
     is_approval = models.BooleanField(default=False)
 
+    bookmarked = models.ManyToManyField(User, related_name="bookmark", blank=True)
+
     def __str__(self):
         return str(self.title)
 
