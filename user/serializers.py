@@ -126,3 +126,4 @@ class GuestBookCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = GuestBook
         fields = ("comment",)
+

@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
 from django.core.validators import RegexValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
+import uuid
 
 
 class MyUserManager(BaseUserManager):
@@ -118,3 +119,12 @@ class GuestBook(models.Model):
 
     def __str__(self):
         return str(self.user)
+
+class PasswordReset(models.Model):
+    class Meta:
+        db_table = "password_reset"
+
+    email = models.EmailField()
+    uuid = models.CharField(max_length=255)
+    is_verify = models.BooleanField(default=False)
+

@@ -5,7 +5,6 @@ from rest_framework_simplejwt.serializers import (
     TokenObtainSerializer,
     update_last_login,
     authenticate,
-    TokenObtainPairSerializer,
     RefreshToken,
 )
 from rest_framework_simplejwt.settings import api_settings
