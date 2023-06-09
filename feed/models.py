@@ -7,6 +7,9 @@ from community.models import Community
 
 # 일반 feed 모델
 class Feed(models.Model, HitCountMixin):
+    community = models.ForeignKey(
+        Community, on_delete=models.CASCADE, related_name="community_feeds"
+    )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="author"
     )

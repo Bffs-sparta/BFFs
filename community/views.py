@@ -21,7 +21,7 @@ class CommunityView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request):
-        """커뮤니티 조회 및 어드민 조회"""
+        """커뮤니티 조회 및 북마크, 어드민 조회"""
         communities = Community.objects.all()
         serializer = CommunitySerializer(communities, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -119,21 +119,34 @@ class CommunityForbiddenView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, comu_id):
-        """커뮤니티 금지어 생성"""
+        """어드민 & 서브 어드민 커뮤니티 금지어 생성 가능"""
         community = Community.objects.get(id=comu_id)
         community_admin = community.comu.get(is_comuadmin=True).user
-        if community_admin == request.user:
-            serializer = ForbiddenWordSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save(community=community)
-            return Response({"msg": "등록이 완료되었습니다."}, status=status.HTTP_201_CREATED)
+        community_subadmin = [admin.user for admin in community.comu.filter(is_subadmin=True)]
+        if community_admin == request.user or request.user in community_subadmin:
+            if request.data['word'] not in [forbidden.word for forbidden in ForbiddenWord.objects.filter(community_id=comu_id)]:
+                serializer = ForbiddenWordSerializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save(community=community)
+                return Response({"msg": "등록이 완료되었습니다."}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({"msg": "이미 등록된 금지어입니다."}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class CommunityBookmarkView(APIView):
-    def get(self, request, comu_id):
-        pass
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, comu_id):
+        """북마크 등록 및 취소"""
+        community = Community.objects.get(id=comu_id)
+        if request.user in community.bookmarked.all():
+            community.bookmarked.remove(request.user)
+            return Response({"msg": "북마크가 취소되었습니다."}, status=status.HTTP_200_OK)
+        else:
+            community.bookmarked.add(request.user)
+            return Response({"msg": "북마크가 등록되었습니다."}, status=status.HTTP_200_OK)
 
 
 class SearchCommunityView(ListAPIView):
