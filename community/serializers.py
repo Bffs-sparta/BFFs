@@ -6,6 +6,7 @@ from .models import Community, CommunityAdmin, ForbiddenWord
 
 class CommunitySerializer(serializers.ModelSerializer):
     admin = serializers.SerializerMethodField()
+    bookmarked = serializers.SerializerMethodField()
 
     class Meta:
         model = Community
@@ -23,6 +24,8 @@ class CommunitySerializer(serializers.ModelSerializer):
         admin_serializer = CommunityAdminSerializer(admin, many=True)
         return admin_serializer.data
 
+    def get_bookmarked(self, obj):
+        return obj.bookmarked.count()
 
 class CommunityCreateSerializer(serializers.ModelSerializer):
     class Meta:
