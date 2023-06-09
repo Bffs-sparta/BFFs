@@ -173,3 +173,14 @@ class ProfileView(APIView):
             return Response(
                 {"message": f"패스워드가 다릅니다"}, status=status.HTTP_400_BAD_REQUEST
             )
+
+
+# 방명록 crud
+
+
+class GuestBookView(APIView):
+    def get(self, request, profile_id):
+        profile = Profile.objects.get(id=profile_id)
+        comments = profile.comment_set.all()
+        serializer = GuestBookSerializer(comments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

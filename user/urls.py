@@ -8,10 +8,14 @@ urlpatterns = [
     path("email/", views.SendEmailView.as_view(), name="email"),
     path("email/verify/", views.VerificationEmailView.as_view(), name="verify"),
     path("<int:user_id>/", views.ProfileView.as_view(), name="profile_view"),
-    path("guestbook/", views.GuestBookView.as_view(), name="guestbook_view"),
     path(
-        "guestbook/<int:guestbook_id>/",
-        views.GuestBookDetailView.as_view(),
-        name="guestbook_detail_view",
+        "guestbook/<int:profile_id>/",
+        views.GuestBookView.as_view(),
+        name="guestbook_view",
     ),
+    # path(
+    #     "guestbook/<int:guestbook_id>/",
+    #     views.GuestBookDetailView.as_view(),
+    #     name="guestbook_detail_view",
+    # ),
 ]

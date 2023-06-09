@@ -114,3 +114,15 @@ class UserDelSerializer(serializers.ModelSerializer):
 
     def get_user_password(self, obj):
         return obj.user.password
+
+
+class GuestBookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GuestBook
+        fields = "__all__"
+
+
+class GuestBookCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GuestBook
+        fields = ("comment",)
