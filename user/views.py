@@ -1,4 +1,4 @@
-from .models import User, Verify
+from .models import User, Profile, GuestBook, Verify
 
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
@@ -24,6 +24,9 @@ from user.serializers import (
     UserSerializer,
     UserProfileSerializer,
     UserProfileUpdateSerializer,
+    UserDelSerializer,
+    GuestBookSerializer,
+    GuestBookCreateSerializer,
 )
 
 from .models import User, Profile
@@ -115,6 +118,9 @@ class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
+# 프로필 ru
+
+
 class ProfileView(APIView):
     # def get_object(self, user_id):
     #     return get_object_or_404(User, id=user_id)
@@ -125,53 +131,7 @@ class ProfileView(APIView):
         # print(f'"⭐️", {serializer.data}')
         # return Response(serializer.data, status=status.HTTP_200_OK)
         profile = Profile.objects.get(id=user_id)
+        print(f'"⭐️", {profile}')
         serializer = UserProfileSerializer(profile)
+        print(f'"⭐️", {serializer.data}')
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def patch(self, request, user_id):
-        profile = Profile.objects.get(user_id=user_id)
-        if profile.user == request.user:
-            serializer = UserProfileUpdateSerializer(
-                profile, data=request.data, partial=True
-            )
-            if serializer.is_valid():
-                serializer.save()
-                return Response({"message": "수정완료!"}, status=status.HTTP_200_OK)
-            else:
-                return Response(
-                    {"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
-                )
-        else:
-            return Response({"message": "권한이 없습니다!"}, status=status.HTTP_403_FORBIDDEN)
-
-    def delete(self, request):
-        profile = Profile.objects.get(user_id=user_id)
-        datas = request.data.copy()
-        datas["is_active"] = False
-        serializer = UserDelSerializer(profile_user, data=datas)
-        if profile_user.check_password(request.data.get("password")):
-            if serializer.is_valid():
-                serializer.save()
-                return Response(
-                    {"message": "계정 비활성화 완료"}, status=status.HTTP_204_NO_CONTENT
-                )
-        else:
-            return Response(
-                {"message": f"패스워드가 다릅니다"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-
-class GuestBookView(APIView):
-    def get(self, request):
-        pass
-
-    def post(self, request):
-        pass
-
-
-class GuestBookDetailView(APIView):
-    def patch(self, request):
-        pass
-
-    def delete(self, request):
-        pass

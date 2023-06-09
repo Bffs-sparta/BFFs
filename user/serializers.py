@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Verify
+from .models import User, Profile, GuestBook, Verify
 from rest_framework.generics import get_object_or_404
 from .models import User, Profile, Verify
 from user.validators import (
@@ -31,7 +31,12 @@ class UserCreateSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "email", "name", "password")
+        fields = (
+            "id",
+            "email",
+            "name",
+            "password",
+        )
         extra_kwargs = {"password": {"write_only": True}}
 
 
@@ -56,45 +61,3 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_user_email(self, obj):
         return obj.user.email
-
-
-class UserProfileUpdateSerializer(serializers.ModelSerializer):
-    user_email = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Profile
-        fields = ("user_email", "nickname", "region", "introduction", "profileimage")
-        extra_kwargs = {
-            "nickname": {
-                "error_messages": {
-                    "required": "닉네임을 입력해주세요.",
-                    "blank": "닉네임을 입력해주세요.",
-                }
-            },
-        }
-
-    def get_user_email(self, obj):
-        return obj.user.email
-
-    def validate(self, data):
-        nickname = data.get("nickname")
-
-        # 닉네임 유효성 검사
-        if nickname_validator(nickname):
-            raise serializers.ValidationError(
-                detail={"닉네임은 공백 없이 2자이상 8자 이하의 영문, 한글,'-' 또는'_'만 사용 가능합니다."}
-            )
-
-        return data
-
-    def update(self, instance, validated_data):
-        user = super().update(instance, validated_data)
-
-        user.save()
-        return user
-
-
-class UserDelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ("is_active",)
