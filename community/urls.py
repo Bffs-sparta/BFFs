@@ -38,7 +38,7 @@ urlpatterns = [
     ),
     # feed 카테고리 list get
     path(
-        "<str:category_name>/",
+        "<str:community_name>/<int:category_id>/",
         feedviews.FeedCategoryListView.as_view(),
         name="feed_category_list_view",
     ),
