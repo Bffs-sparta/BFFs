@@ -135,3 +135,23 @@ class ProfileView(APIView):
         serializer = UserProfileSerializer(profile)
         print(f'"⭐️", {serializer.data}')
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, user_id):
+        profile = Profile.objects.get(user_id=user_id)
+        # print(f'"⭐️⭐️", {profile.user}')
+        # me = request.user
+        # print(f'"⭐️⭐️⭐️", {me}')
+        if profile.user == request.user:
+            serializer = UserProfileUpdateSerializer(
+                profile, data=request.data, partial=True
+            )
+            print(f'"⭐️", {serializer}')
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": "수정완료!"}, status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            return Response({"message": "권한이 없습니다!"}, status=status.HTTP_403_FORBIDDEN)
