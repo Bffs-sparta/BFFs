@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 from user.models import User
 
 
@@ -6,7 +7,7 @@ class Community(models.Model):
     class Meta:
         db_table = "community"
 
-    title = models.CharField(max_length=20)
+    title = models.CharField(max_length=20, unique=True)
     introduction = models.TextField()
     is_approval = models.BooleanField(default=False)
 

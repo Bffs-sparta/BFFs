@@ -119,14 +119,18 @@ class CommunityForbiddenView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, comu_id):
-        """커뮤니티 금지어 생성"""
+        """어드민 & 서브 어드민 커뮤니티 금지어 생성 가능"""
         community = Community.objects.get(id=comu_id)
         community_admin = community.comu.get(is_comuadmin=True).user
-        if community_admin == request.user:
-            serializer = ForbiddenWordSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save(community=community)
-            return Response({"msg": "등록이 완료되었습니다."}, status=status.HTTP_201_CREATED)
+        community_subadmin = [admin.user for admin in community.comu.filter(is_subadmin=True)]
+        if community_admin == request.user or request.user in community_subadmin:
+            if request.data['word'] not in [forbidden.word for forbidden in ForbiddenWord.objects.filter(community_id=comu_id)]:
+                serializer = ForbiddenWordSerializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save(community=community)
+                return Response({"msg": "등록이 완료되었습니다."}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({"msg": "이미 등록된 금지어입니다."}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
