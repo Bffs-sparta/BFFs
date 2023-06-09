@@ -28,8 +28,8 @@ class SendEmailView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        email = request.data.get("email", None)
-        if email is None:
+        email = request.data.get("email", "")
+        if not email:
             return Response(
                 {"error": "이메일을 작성해 주세요"}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -76,7 +76,8 @@ class VerificationEmailView(APIView):
                 return Response({"msg": "메일인증이 완료되었습니다"}, status=status.HTTP_200_OK)
             else:
                 return Response(
-                    {"error": "인증 코드가 틀렸습니다"}, status=status.HTTP_400_BAD_REQUEST
+                    {"error": "이메일이나 인증코드가 인증 코드가 틀렸습니다"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
 

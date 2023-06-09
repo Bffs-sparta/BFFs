@@ -10,11 +10,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
         model = User
 
     def create(self, validated_data):
-        # verify = get_object_or_404(Verify, email=validated_data['email'])
-        # if verify:
-        #     user = User.objects.create_user(**validated_data)
-        #     return user
-        # else:
-        #     raise serializers.ValidationError("이메일 인증을 완료 해주세요")
-        user = User.objects.create_user(**validated_data)
-        return user
+        verify = get_object_or_404(Verify, email=validated_data["email"])
+        if verify:
+            user = User.objects.create_user(**validated_data)
+            return user
+        else:
+            raise serializers.ValidationError("이메일 인증을 완료 해주세요")
+        # user = User.objects.create_user(**validated_data)
+        # return user
