@@ -14,6 +14,7 @@ class CommunitySerializer(serializers.ModelSerializer):
             "title",
             "introduction",
             "is_approval",
+            "bookmarked",
             "admin",
         ]
 

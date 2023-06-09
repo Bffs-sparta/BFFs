@@ -21,7 +21,7 @@ class CommunityView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request):
-        """커뮤니티 조회 및 어드민 조회"""
+        """커뮤니티 조회 및 북마크, 어드민 조회"""
         communities = Community.objects.all()
         serializer = CommunitySerializer(communities, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -132,8 +132,17 @@ class CommunityForbiddenView(APIView):
 
 
 class CommunityBookmarkView(APIView):
-    def get(self, request, comu_id):
-        pass
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, comu_id):
+        """북마크 등록 및 취소"""
+        community = Community.objects.get(id=comu_id)
+        if request.user in community.bookmarked.all():
+            community.bookmarked.remove(request.user)
+            return Response({"msg": "북마크가 취소되었습니다."}, status=status.HTTP_200_OK)
+        else:
+            community.bookmarked.add(request.user)
+            return Response({"msg": "북마크가 등록되었습니다."}, status=status.HTTP_200_OK)
 
 
 class SearchCommunityView(ListAPIView):
