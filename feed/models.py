@@ -46,7 +46,7 @@ class GroupPurchase(models.Model):
 
 # community 내 feed에 대한 카테고리 모델, 전체/자유/모집/공구
 class Category(models.Model):
-    feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
+    feed = models.ForeignKey(Feed, on_delete=models.CASCADE, related_name="feed")
     category_name = models.CharField(max_length=20)
 
 

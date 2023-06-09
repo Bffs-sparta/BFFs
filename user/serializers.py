@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Verify
+from .models import User, Profile, GuestBook, Verify
 from rest_framework.generics import get_object_or_404
 from .models import User, Profile, Verify
 from user.validators import (
@@ -31,7 +31,12 @@ class UserCreateSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ("id", "email", "name", "password")
+        fields = (
+            "id",
+            "email",
+            "name",
+            "password",
+        )
         extra_kwargs = {"password": {"write_only": True}}
 
 
@@ -63,7 +68,13 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ("user_email", "nickname", "region", "introduction", "profileimage")
+        fields = (
+            "user_email",
+            "nickname",
+            "region",
+            "introduction",
+            "profileimage",
+        )
         extra_kwargs = {
             "nickname": {
                 "error_messages": {
@@ -95,6 +106,23 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
 
 
 class UserDelSerializer(serializers.ModelSerializer):
+    user_password = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ("is_active",)
+        fields = ("is_active", "user_password")
+
+    def get_user_password(self, obj):
+        return obj.user.password
+
+
+class GuestBookSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GuestBook
+        fields = "__all__"
+
+
+class GuestBookCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GuestBook
+        fields = ("comment",)
