@@ -103,3 +103,14 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
 
         user.save()
         return user
+
+
+class UserDelSerializer(serializers.ModelSerializer):
+    user_password = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ("is_active", "user_password")
+
+    def get_user_password(self, obj):
+        return obj.user.password
