@@ -184,3 +184,11 @@ class GuestBookView(APIView):
         comments = profile.comment_set.all()
         serializer = GuestBookSerializer(comments, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, profile_id):
+        serializer = GuestBookCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, profile_id=profile_id)
+            return Response(serializer.data, status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
