@@ -1,10 +1,8 @@
 from rest_framework import permissions, status, filters
-from rest_framework.generics import ListAPIView
-from rest_framework.generics import get_object_or_404
+from rest_framework.generics import ListAPIView, get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-# from feed.models import Feed
 from user.models import User
 from .models import Community, CommunityAdmin, ForbiddenWord
 from .serializers import (

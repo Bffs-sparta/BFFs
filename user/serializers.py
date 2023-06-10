@@ -1,14 +1,8 @@
 from rest_framework import serializers
-from .models import User, Profile, GuestBook, Verify
 from rest_framework.generics import get_object_or_404
-from .models import User, Profile, Verify
-from user.validators import (
-    nickname_validator,
-)
 
-from django.core.files.storage import default_storage
-from uuid import uuid4
-import os
+from .models import User, Profile, GuestBook, Verify
+from user.validators import nickname_validator
 
 
 class UserCreateSerializer(serializers.ModelSerializer):

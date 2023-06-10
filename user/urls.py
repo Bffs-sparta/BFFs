@@ -1,11 +1,11 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 from . import views
-from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path("", views.SignupView.as_view(), name="signup"),
     path("login/", views.LoginView.as_view(), name="login"),
+    path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("kakao/login/", views.KakaoLoginView.as_view(), name="kakao_login"),
     path("kakao/callback/", views.KakaoCallbackView.as_view(), name="kakao_login"),
     path("email/", views.SendEmailView.as_view(), name="email"),
@@ -40,5 +40,7 @@ urlpatterns = [
     path("naver/login/", views.NaverLoginView.as_view(), name="naver_login"),
     path("naver/callback/", views.NaverCallbackView.as_view(), name="naver_callback"),
     path("google/login/", views.GoogleLoginView.as_view(), name="google_login"),
-    path("google/callback/", views.GoogleCallbackView.as_view(), name="google_callback"),
+    path(
+        "google/callback/", views.GoogleCallbackView.as_view(), name="google_callback"
+    ),
 ]

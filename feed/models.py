@@ -1,11 +1,11 @@
-from django.db import models
-from hitcount.models import HitCountMixin, HitCount
 from django.conf import settings
-from user.models import User
-from community.models import Community
-from user.models import Profile
-from django.utils import timezone
+from django.db import models
 from django.db.models import Count
+from django.utils import timezone
+from hitcount.models import HitCountMixin
+
+from community.models import Community
+from user.models import User, Profile
 
 
 # 일반 feed 모델

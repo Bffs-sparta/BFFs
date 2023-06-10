@@ -1,10 +1,10 @@
-from django.test import TestCase
+from datetime import timedelta
+from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
+
 from .models import User, Verify
-from django.urls import reverse
-from datetime import timedelta
-from django.utils import timezone
 
 
 # Create your tests here.
