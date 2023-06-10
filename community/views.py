@@ -129,7 +129,7 @@ class CommunityForbiddenView(APIView):
         if community_admin == request.user or request.user in community_subadmin:
             if request.data["word"] not in [
                 forbidden.word
-                for forbidden in ForbiddenWord.objects.filter(community_id=comu_id)
+                for forbidden in ForbiddenWord.objects.filter(community_id=community.id)
             ]:
                 serializer = ForbiddenWordSerializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
