@@ -104,11 +104,82 @@ class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
+class KakaoLoginView(APIView):
+    def get(self, request):
+        CLIENT_ID = config("KAKAO_CLIENT_ID")
+        BACKEND_URL = config("BACKEND_URL")
+        CALLBACK_URL = BACKEND_URL + "/user/kakao/callback/"
+        URL = "https://kauth.kakao.com/oauth/authorize"
+        return Response(
+            {"url": URL, "redirecturi": CALLBACK_URL, "client_id": CLIENT_ID},
+            status=status.HTTP_200_OK,
+        )
+
+
+class KakaoCallbackView(APIView):
+    def get(self, request):
+        code = request.GET.get("code")  # url에서 code부분만 가져옴
+        data = {
+            "grant_type": "authorization_code",
+            "client_id": config("KAKAO_CLIENT_ID"),
+            "redirect_uri": config("BACKEND_URL") + "/user/kakao/callback/",
+            "code": code,
+            "client_secret": config("KAKAO_CLIENT_SECRET"),
+        }
+        access_token_request = requests.post(
+            "https://kauth.kakao.com/oauth/token",
+            headers={"Content-Type": "application/x-www-form-urlencoded;charset=utf-8"},
+            data=data,
+        )
+        token_data = access_token_request.json()
+        access_token = token_data.get("access_token")
+        user_data_response = requests.get(
+            "https://kapi.kakao.com/v2/user/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        user_data = user_data_response.json()
+        kakao_account = user_data.get("kakao_account")
+        profile = kakao_account.get("profile")
+
+        name = profile.get("nickname")
+        email = kakao_account.get("email")
+        social = "kakao"
+
+        profile_image = profile.get("profile_image_url")
+        age_range = kakao_account.get("age_range")
+        return socialLogin(name=name, email=email, login_type=social)
+
+
+def socialLogin(**kwargs):
+    if User.objects.filter(email=kwargs.get("email")).exists():
+        user = User.objects.get(email=kwargs.get("email"))
+        if user.login_type != kwargs.get("social"):
+            return Response(
+                {"error": "선택한 소셜계정 외 다른 가입방법으로 가입된 이메일입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            return get_token(user)
+    else:
+        user = User.objects.create_user(**kwargs)
+        user.set_unusable_password()
+        user.save()
+        return get_token(user)
+
+
+def get_token(user):
+    refresh_token = RefreshToken.for_user(user)
+    access_token = CustomTokenObtainPairSerializer.get_token(user)
+    return Response(
+        {"access_token": str(access_token), "refresh_token": str(refresh_token)},
+        status=status.HTTP_200_OK,
+    )
+
+
 # 프로필 ru
 
 
 class ProfileView(APIView):
-
     def get(self, request, user_id):
         profile = Profile.objects.get(id=user_id)
 
@@ -188,6 +259,7 @@ class GuestBookDetailView(APIView):
         else:
             return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
 
+
 class MyPasswordResetView(PasswordResetView):
     html_email_template_name = "email.html"
     template_name = "password_reset_form.html"
@@ -210,4 +282,3 @@ class MyPasswordResetConfirmView(PasswordResetConfirmView):
 class MyPasswordResetCompleteView(PasswordResetCompleteView):
     template_name = "password_reset_complete.html"
     title = "비밀번호 초기화 완료"
-
