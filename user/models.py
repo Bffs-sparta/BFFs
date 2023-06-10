@@ -60,6 +60,7 @@ class User(AbstractBaseUser):
     is_admin = models.BooleanField(default=False)
     withdraw_at = models.DateTimeField(blank=True, null=True)
     change_password_at = models.DateTimeField(blank=True, null=True)
+    login_type = models.CharField(max_length=10, default="site")
 
     objects = MyUserManager()
 

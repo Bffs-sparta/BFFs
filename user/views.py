@@ -32,9 +32,6 @@ from user.serializers import (
     GuestBookCreateSerializer,
 )
 
-from .models import User, Profile
-
-
 class SendEmailView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -104,7 +101,50 @@ class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
-# 프로필 ru
+class NaverLoginView(APIView):
+    def get(self, request):
+        CLIENT_ID = config('NAVER_CLIENT_ID')
+        STATE_STRING = get_random_string(16)
+        CALLBACK_URL = config('BACKEND_URL') + "/user/naver/callback/"
+        URL = f"https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id={CLIENT_ID}&state={STATE_STRING}&redirect_uri={CALLBACK_URL}"
+        return Response({'url': URL}, status=status.HTTP_200_OK)
+
+
+class NaverCallbackView(APIView):
+    def get(self, request):
+        CLIENT_ID = config('NAVER_CLIENT_ID')
+        CLIENT_SECRET = config('NAVER_CLIENT_SECRET')
+        CODE = request.GET.get('code')
+        STATE = request.GET.get('state')
+        URL = f"https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id={CLIENT_ID}&client_secret={CLIENT_SECRET}&code={CODE}&state={STATE}"
+        response = requests.get(URL)
+        response_json = response.json()
+        access_token = response_json.get('access_token')
+
+        TOKEN_URL = "https://openapi.naver.com/v1/nid/me"
+        user_response = requests.get(TOKEN_URL,
+                        headers={"Authorization": "Bearer " + access_token})
+        user_response_json = user_response.json()
+        user_data = user_response_json.get('response')
+        email = user_data.get('email')
+        name = user_data.get('name')
+        social = 'naver'
+        return socialLogin(name=name, email=email, login_type=social)
+
+
+class GoogleLoginView(APIView):
+    def get(self, request):
+        CLIENT_ID = config('KAKAO_CLIENT_ID')
+        BACKEND_URL = config('BACKEND_URL')
+        CALLBACK_URL = BACKEND_URL + "/user/google/callback/"
+        URL = 'https://accounts.google.com/o/oauth2/v2/auth'
+        return Response({'url':URL,"redirecturi": CALLBACK_URL, "client_id": CLIENT_ID}, status=status.HTTP_200_OK)
+
+
+class GoogleCallbackView(APIView):
+    def get(self,request):
+        code = request.GET.get('code')
+        pass
 
 
 class ProfileView(APIView):
@@ -151,8 +191,6 @@ class ProfileView(APIView):
 
 
 # 방명록 crud
-
-
 class GuestBookView(APIView):
     def get(self, request, profile_id):
         profile = Profile.objects.get(id=profile_id)
@@ -187,6 +225,7 @@ class GuestBookDetailView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
+
 
 class MyPasswordResetView(PasswordResetView):
     html_email_template_name = "email.html"
