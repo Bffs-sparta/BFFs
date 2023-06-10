@@ -20,7 +20,7 @@ class CommunityViewTest(APITestCase):
             user=cls.user, community=cls.community, is_comuadmin=True
         )
         cls.path = reverse('community_view')
-        cls.path_id = reverse('community_detail_view', kwargs={"comu_id": 1})
+        cls.path_name = reverse('community_detail_view', kwargs={"community_name": "title2"})
 
     def setUp(self):
         self.access_token = self.client.post(reverse("login"), self.user_data).data["access"]
@@ -72,7 +72,7 @@ class CommunityViewTest(APITestCase):
     def test_put_community_unauthorized(self):
         """비로그인시 커뮤니티 수정 권한 없음"""
         response = self.client.put(
-            path = self.path_id,
+            path = self.path_name,
             data = self.community_edit_data,
         )
         self.assertEqual(response.status_code, 401)
@@ -80,7 +80,7 @@ class CommunityViewTest(APITestCase):
     def test_put_community_no_admin(self):
         """admin 아닐때 커뮤니티 수정 실패"""
         response = self.client.put(
-            path = self.path_id,
+            path = self.path_name,
             HTTP_AUTHORIZATION = f"Bearer {self.access_token2}"
         )
         self.assertEqual(response.status_code, 401)
@@ -88,7 +88,7 @@ class CommunityViewTest(APITestCase):
     def test_put_community(self):
         """커뮤니티 수정 성공"""
         response = self.client.put(
-            path = self.path_id,
+            path = self.path_name,
             data = self.community_edit_data,
             HTTP_AUTHORIZATION = f"Bearer {self.access_token}"
         )
@@ -97,14 +97,14 @@ class CommunityViewTest(APITestCase):
     def test_delete_community_unauthorized(self):
         """비로그인시 커뮤니티 삭제 권한 없음"""
         response = self.client.delete(
-            path = self.path_id,
+            path = self.path_name,
         )
         self.assertEqual(response.status_code, 401)
 
     def test_delete_community_no_admin(self):
         """admin 아닐때 커뮤니티 삭제 실패"""
         response = self.client.delete(
-            path = self.path_id,
+            path = self.path_name,
             HTTP_AUTHORIZATION = f"Bearer {self.access_token2}"
         )
         self.assertEqual(response.status_code, 401)
@@ -112,7 +112,7 @@ class CommunityViewTest(APITestCase):
     def test_delete_community(self):
         """커뮤니티 삭제 성공"""
         response = self.client.delete(
-            path = self.path_id,
+            path = self.path_name,
             HTTP_AUTHORIZATION = f"Bearer {self.access_token}"
         )
         self.assertEqual(response.status_code, 204)
@@ -138,7 +138,7 @@ class CommunitySubAdminViewTest(APITestCase):
         CommunityAdmin.objects.create(
             user=cls.user2, community=cls.community, is_subadmin=True
         )
-        cls.path = reverse('community_subadmin_view', kwargs={"comu_id": 1})
+        cls.path = reverse('community_subadmin_view', kwargs={"community_name": "title1"})
         cls.exist_subadmin_data = {'user': 2}
 
     def setUp(self):
@@ -246,7 +246,7 @@ class CommunityForbiddenViewTest(APITestCase):
         CommunityAdmin.objects.create(
             user=cls.user2, community=cls.community, is_subadmin=True
         )
-        cls.path = reverse('community_forbidden_view', kwargs={"comu_id": 1})
+        cls.path = reverse('community_forbidden_view', kwargs={"community_name": "title1"})
         cls.word_data = {'word': 'word'}
         ForbiddenWord.objects.create(word = 'word2', community=cls.community)
 
@@ -303,7 +303,7 @@ class CommunityBookmarkViewTest(APITestCase):
         cls.user_data = {'email': 'test1@naver.com', 'name': 'test1', 'password': 'test123!'}
         cls.user = User.objects.create_user('test1@naver.com', 'test1', 'test123!')
         cls.community = Community.objects.create(title = 'title1', introduction = 'introduction1')        
-        cls.path = reverse('community_bookmark_view', kwargs={"comu_id": 1})
+        cls.path = reverse('community_bookmark_view', kwargs={"community_name": "title1"})
 
     def setUp(self):
         self.access_token = self.client.post(reverse("login"), self.user_data).data["access"]
