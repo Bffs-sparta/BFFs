@@ -20,7 +20,7 @@ class Feed(models.Model, HitCountMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     likes = models.ManyToManyField(
-        "user.User", blank=True, default=0, related_name="feed_likes"
+        "user.User", blank=True, default=[], related_name="feed_likes"
     )
     is_notification = models.BooleanField(default=False)
 
@@ -49,8 +49,11 @@ class GroupPurchase(models.Model):
 
 # community 내 feed에 대한 카테고리 모델, 전체/자유/모집/공구
 class Category(models.Model):
-    feed = models.ForeignKey(Feed, on_delete=models.CASCADE)
+    # feed = models.ForeignKey(Feed, on_delete=models.CASCADE, related_name='feed_category', null=True, blank=True)
     category_name = models.CharField(max_length=20)
+
+    def __str__(self):
+        return self.category_name
 
 
 # 댓글 모델
@@ -71,9 +74,8 @@ class Comment(models.Model):
 
 # 대댓글 모델
 class Cocomment(models.Model):
-    feed = models.ForeignKey(Feed, on_delete=models.CASCADE, related_name="cocomment")
     comment = models.ForeignKey(
-        Comment, related_name="cocomment", on_delete=models.CASCADE
+        Comment, related_name="cocomment", on_delete=models.CASCADE, blank=True
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -86,16 +88,3 @@ class Cocomment(models.Model):
 
     def __str__(self):
         return self.text
-
-
-# # 댓글 - 자기자신을 참조하는 댓글 모델
-# class Comment(models.Model):
-#     feed = models.ForeignKey(Feed, related_name='comment', on_delete=models.CASCADE)
-#     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='comment_author')
-#     comment = models.ForeignKey(Comment, related_name='parent_comment', on_delete=models.SET_NULL, null=True)
-#     text = models.CharField(max_length=500)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True)
-
-#     def __str__(self):
-#         return self.text

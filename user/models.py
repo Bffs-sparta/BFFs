@@ -68,7 +68,7 @@ class User(AbstractBaseUser):
     REQUIRED_FIELDS = ["name"]
 
     def __str__(self):
-        return self.email
+        return str(self.email)
 
     def has_perm(self, perm, obj=None):
         "Does the user have a specific permission?"
@@ -88,12 +88,38 @@ class User(AbstractBaseUser):
 
 
 class Verify(models.Model):
-    class Meata:
+    class Meta:
         db_table = "verify"
 
     email = models.EmailField()
     code = models.CharField(max_length=6)
     is_verify = models.BooleanField(default=False)
+
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    nickname = models.CharField(max_length=24)
+    profileimage = models.ImageField(upload_to="profile_img/", null=True, blank=True)
+    introduction = models.TextField(null=True, blank=True, default=None)
+    region = models.CharField(max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.nickname)
+
+
+class GuestBook(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    profile = models.ForeignKey(
+        Profile, on_delete=models.CASCADE, related_name="comment_set"
+    )
+    comment = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return str(self.user)
 
 
 class PasswordReset(models.Model):
