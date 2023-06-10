@@ -87,7 +87,7 @@ class User(AbstractBaseUser):
 
 
 class Verify(models.Model):
-    class Meata:
+    class Meta:
         db_table = "verify"
 
     email = models.EmailField()
@@ -120,6 +120,7 @@ class GuestBook(models.Model):
     def __str__(self):
         return str(self.user)
 
+
 class PasswordReset(models.Model):
     class Meta:
         db_table = "password_reset"
@@ -127,4 +128,3 @@ class PasswordReset(models.Model):
     email = models.EmailField()
     uuid = models.CharField(max_length=255)
     is_verify = models.BooleanField(default=False)
-

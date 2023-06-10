@@ -18,7 +18,7 @@ urlpatterns = [
         "<int:profile_id>/guestbook/<int:guestbook_id>/",
         views.GuestBookDetailView.as_view(),
         name="guestbook_detail_view",
-
+    ),
     path("password/reset/", views.MyPasswordResetView.as_view(), name="password_reset"),
     path(
         "password/reset/done/",
