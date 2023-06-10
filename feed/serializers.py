@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from feed.models import Feed, Comment, Cocomment, Category, GroupPurchase
+from feed.models import Feed, Comment, Cocomment, Category, GroupPurchase, JoinedUser
 from community.models import CommunityAdmin
 from community.serializers import CommunityAdminSerializer
 from django.utils import timezone
