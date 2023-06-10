@@ -1,16 +1,20 @@
 from rest_framework.views import APIView
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.generics import get_object_or_404
 from feed.models import Feed, Comment, Cocomment
+from community.models import Community
 from rest_framework import generics
 from rest_framework import filters
+
 
 from feed.serializers import (
     FeedListSerializer,
     FeedDetailSerializer,
     FeedCreateSerializer,
     CommentSerializer,
+    FeedNotificationSerializer,
     GroupPurchaseSerializer,
     CocommentSerializer,
 )
@@ -21,8 +25,6 @@ class CommentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, feed_id):
-        # if not request.user.is_authenticated:
-        #     return Response("로그인이 필요합니다.", status=status.HTTP_401_UNAUTHORIZED)
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user, feed_id=feed_id)
@@ -34,10 +36,10 @@ class CommentView(APIView):
         comment = get_object_or_404(Comment, id=comment_id)
         if comment.user != request.user:
             return Response(
-                {"error": "댓글 작성자만 수정할 수 있습니다."}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "댓글 작성자만 수정할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN
             )
         else:
-            serializer = CommentSerializer(comment)
+            serializer = CommentSerializer(comment, data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return Response({"message": "댓글을 수정했습니다."}, status=status.HTTP_200_OK)
@@ -56,12 +58,23 @@ class CommentView(APIView):
 
 
 class CocommentView(APIView):
-    # 대댓글 cocomment CUD view
+    # 대댓글 cocomment CRUD view
+    def get(self, request, comment_id):
+        cocomment = Cocomment.objects.filter(comment_id=comment_id).order_by(
+            "created_at"
+        )
+        if not cocomment:
+            return Response({"message": "대댓글이 없습니다"}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            serializer = CocommentSerializer(cocomment, many=True)
+            return Response(
+                {"message": "대댓글을 가져왔습니다", "cocomment": serializer.data},
+                status=status.HTTP_200_OK,
+            )
+
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, comment_id):
-        # if not request.user.is_authenticated:
-        #     return Response("로그인이 필요합니다.", status=status.HTTP_401_UNAUTHORIZED)
         serializer = CocommentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user, comment_id=comment_id)
@@ -76,7 +89,7 @@ class CocommentView(APIView):
                 {"error": "대댓글 작성자만 수정할 수 있습니다."}, status=status.HTTP_400_BAD_REQUEST
             )
         else:
-            serializer = CocommentSerializer(cocomment)
+            serializer = CocommentSerializer(cocomment, data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return Response({"message": "대댓글을 수정했습니다."}, status=status.HTTP_200_OK)
@@ -97,26 +110,30 @@ class CocommentView(APIView):
 class FeedListView(APIView):
     # feed 전체 리스트 view
     def get(self, request, community_name):
-        feed_list = Feed.objects.all().order_by("-created_at")
+        community = Community.objects.get(title=community_name)
+        feed_list = Feed.objects.filter(community_id=community.id).order_by(
+            "-created_at"
+        )
         if not feed_list:
             return Response(
                 {"message": "아직 게시글이 없습니다."}, status=status.HTTP_204_NO_CONTENT
             )
         else:
-            serializer = FeedListSerializer(feed_list)
+            serializer = FeedListSerializer(feed_list, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class FeedCategoryListView(APIView):
     # feed 카테고리 리스트 view
-    def get(self, request, category_name):
-        feed_list = Feed.objects.filter(category_name=category_name)
+    def get(self, request, community_name, category_id):
+        community = Community.objects.get(title=community_name)
+        feed_list = Feed.objects.filter(category=category_id).order_by("-created_at")
         if not feed_list:
             return Response(
-                {"message": "아직 게시글이 없습니다."}, status=status.HTTP_204_NO_CONTENT
+                {"message": "아직 카테고리 게시글이 없습니다."}, status=status.HTTP_204_NO_CONTENT
             )
         else:
-            serializer = FeedListSerializer(feed_list)
+            serializer = FeedListSerializer(feed_list, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -124,18 +141,18 @@ class FeedDetailView(APIView):
     # feed 상세보기, 수정, 삭제 view
     # 조회수 기능을 위한 모델 세팅
     model = Feed
-    permission_classes = [permissions.IsAuthenticated]
 
     # feed 상세 및 comment,cocomment 함께 가져오기
     def get(self, request, community_name, feed_id):
         feed = get_object_or_404(Feed, id=feed_id)
+        community = Community.objects.get(title=community_name)
         serializer = FeedDetailSerializer(feed)
         comment = feed.comment.all().order_by("created_at")
         # 댓글 유무 여부 확인
         if not comment:
             return Response(
                 {
-                    "message": f"{community_name, feed_id}, 조회수 +1",
+                    "message": "조회수 +1",
                     "feed": serializer.data,
                     "comment": "아직 댓글이 없습니다",
                 },
@@ -147,7 +164,7 @@ class FeedDetailView(APIView):
             feed.click
             return Response(
                 {
-                    "message": f"{community_name, feed_id},조회수 +1",
+                    "message": "조회수 +1",
                     "feed": serializer.data,
                     "comment": comment_serializer.data,
                 },
@@ -160,18 +177,18 @@ class FeedDetailView(APIView):
     #     feed.click
     #     return Response("조회수 +1", status=status.HTTP_200_OK)
 
+    permission_classes = [permissions.IsAuthenticated]
+
     def put(self, request, feed_id):
-        # if not request.user.is_authenticated:
-        #     return Response("로그인이 필요합니다.", status=status.HTTP_401_UNAUTHORIZED)
         feed = get_object_or_404(Feed, id=feed_id)
         if feed.user != request.user:
             return Response(
                 {"error": "게시글 작성자만 수정할 수 있습니다."}, status=status.HTTP_400_BAD_REQUEST
             )
         else:
-            serializer = FeedCreateSerializer(feed)
+            serializer = FeedCreateSerializer(feed, data=request.data)
             if serializer.is_valid():
-                serializer.save()
+                serializer.save(user=request.user)
                 return Response({"message": "게시글이 수정되었습니다"}, status=status.HTTP_200_OK)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -189,12 +206,13 @@ class FeedDetailView(APIView):
 
 class FeedCreateView(APIView):
     # feed 생성 view
-    def post(self, request):
-        if not request.user.is_authenticated:
-            return Response("로그인이 필요합니다.", status=status.HTTP_401_UNAUTHORIZED)
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, community_name):  # testcomu
         serializer = FeedCreateSerializer(data=request.data)
+        community = Community.objects.get(title=community_name)
         if serializer.is_valid():
-            serializer.save(user=request.user)
+            serializer.save(community=community, user=request.user)
             return Response({"message": "게시글이 작성되었습니다"}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -212,7 +230,35 @@ class LikeView(APIView):
             return Response("좋아요👍를 눌렀습니다.", status=status.HTTP_200_OK)
 
 
-class FeedSearchView(generics.ListCreateAPIView):
+class FeedNotificationView(APIView):
+    def post(self, request, feed_id):
+        feed = Feed.objects.get(id=feed_id)
+        if feed:
+            serializer = FeedNotificationSerializer(feed, data=request.data)
+            is_notificated = serializer.post_is_notification(feed, request)
+            if is_notificated == True:
+                print("⭐️")
+                serializer.is_valid(raise_exception=True)
+                serializer.save(is_notification=False)
+                return Response(
+                    {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
+                    status=status.HTTP_200_OK,
+                )
+            else:  # False일 경우
+                print("⭐️⭐️")
+                serializer.is_valid(raise_exception=True)
+                serializer.save(is_notification=True)
+                return Response(
+                    {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
+                    status=status.HTTP_200_OK,
+                )
+        else:
+            return Response(
+                {"error": "유효하지 않은 요청입니다"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class FeedSearchView(ListAPIView):
     search_fields = (
         "user",
         "title",

@@ -46,8 +46,8 @@ INSTALLED_APPS = [
     "django_cron",
     "hitcount",
     "user",
-    "feed",
     "community",
+    "feed",
 ]
 
 MIDDLEWARE = [

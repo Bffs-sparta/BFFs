@@ -1,4 +1,4 @@
-from .models import User, Verify
+from .models import User, Profile, GuestBook, Verify
 
 from rest_framework import permissions
 from rest_framework import status
@@ -22,6 +22,17 @@ from decouple import config
 from .jwt_tokenserializer import CustomTokenObtainPairSerializer
 from django.utils.crypto import get_random_string
 from .tasks import verifymail
+
+from user.serializers import (
+    UserSerializer,
+    UserProfileSerializer,
+    UserProfileUpdateSerializer,
+    UserDelSerializer,
+    GuestBookSerializer,
+    GuestBookCreateSerializer,
+)
+
+from .models import User, Profile
 
 
 class SendEmailView(APIView):
@@ -49,8 +60,8 @@ class SendEmailView(APIView):
                 code = get_random_string(length=6)
                 verifymail.delay(email, code)
                 Verify.objects.create(email=email, code=code)
-
                 return Response({"code": code}, status=status.HTTP_200_OK)  # 테스트용
+
                 # return Response({'success':'success'},status=status.HTTP_200_OK)
 
 
@@ -82,7 +93,7 @@ class VerificationEmailView(APIView):
 
 
 class SignupView(APIView):
-    def post(slef, request):
+    def post(self, request):
         user_data = UserCreateSerializer(data=request.data)
         user_data.is_valid(raise_exception=True)
         user_data.save()
@@ -92,6 +103,90 @@ class SignupView(APIView):
 class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
+
+# 프로필 ru
+
+
+class ProfileView(APIView):
+
+    def get(self, request, user_id):
+        profile = Profile.objects.get(id=user_id)
+
+        serializer = UserProfileSerializer(profile)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, user_id):
+        profile = Profile.objects.get(user_id=user_id)
+        if profile.user == request.user:
+            serializer = UserProfileUpdateSerializer(
+                profile, data=request.data, partial=True
+            )
+
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"message": "수정완료!"}, status=status.HTTP_200_OK)
+            else:
+                return Response(
+                    {"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            return Response({"message": "권한이 없습니다!"}, status=status.HTTP_403_FORBIDDEN)
+
+    def delete(self, request, user_id):
+        profile = User.objects.get(id=user_id)
+        datas = request.data.copy()
+        datas["is_active"] = False
+        serializer = UserDelSerializer(profile, data=datas)
+        if profile.check_password(request.data.get("password")):
+            if serializer.is_valid():
+                serializer.save()
+                return Response(
+                    {"message": "계정 비활성화 완료"}, status=status.HTTP_204_NO_CONTENT
+                )
+        else:
+            return Response(
+                {"message": f"패스워드가 다릅니다"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+# 방명록 crud
+
+
+class GuestBookView(APIView):
+    def get(self, request, profile_id):
+        profile = Profile.objects.get(id=profile_id)
+        comments = profile.comment_set.all()
+        serializer = GuestBookSerializer(comments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, profile_id):
+        serializer = GuestBookCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, profile_id=profile_id)
+            return Response(serializer.data, status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GuestBookDetailView(APIView):
+    def patch(self, request, profile_id, guestbook_id):
+        comment = GuestBook.objects.get(id=guestbook_id)
+        if request.user == comment.user:
+            serializer = GuestBookCreateSerializer(comment, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
+
+    def delete(self, request, profile_id, guestbook_id):
+        comment = GuestBook.objects.get(id=guestbook_id)
+        if request.user == comment.user:
+            comment.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
 
 class MyPasswordResetView(PasswordResetView):
     html_email_template_name = "email.html"
@@ -115,3 +210,4 @@ class MyPasswordResetConfirmView(PasswordResetConfirmView):
 class MyPasswordResetCompleteView(PasswordResetCompleteView):
     template_name = "password_reset_complete.html"
     title = "비밀번호 초기화 완료"
+
