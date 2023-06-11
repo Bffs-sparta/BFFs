@@ -29,6 +29,7 @@ from .validators import email_validator
 from .jwt_tokenserializer import CustomTokenObtainPairSerializer
 from .tasks import verifymail
 
+
 class SendEmailView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -55,7 +56,6 @@ class SendEmailView(APIView):
                 verifymail.delay(email, code)
                 Verify.objects.create(email=email, code=code)
                 return Response({"code": code}, status=status.HTTP_200_OK)  # 테스트용
-
 
                 # return Response({'success':'success'},status=status.HTTP_200_OK)
 
@@ -101,7 +101,6 @@ class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
-
 class NaverLoginView(APIView):
     def get(self, request):
         CLIENT_ID = config("NAVER_CLIENT_ID")
@@ -130,6 +129,7 @@ class NaverCallbackView(APIView):
         user_data = user_response_json.get("response")
         email = user_data.get("email")
         name = user_data.get("name")
+        profileimage = user_data.get("profile_image_url")
         social = "naver"
         return socialLogin(name=name, email=email, login_type=social)
 
@@ -224,18 +224,15 @@ def get_token(user):
     )
 
 
-
 # 프로필 ru
 
 
 class ProfileView(APIView):
-
     def get(self, request, user_id):
         profile = Profile.objects.get(user_id=user_id)
 
     def get(self, request, user_id):
         profile = Profile.objects.get(id=user_id)
-
 
         serializer = UserProfileSerializer(profile)
 
@@ -262,8 +259,8 @@ class ProfileView(APIView):
         profile = User.objects.get(id=user_id)
         datas = request.data.copy()
 
-        datas["is_withdraw"] = False
-        
+        datas["is_withdraw"] = True
+
         serializer = UserDelSerializer(profile, data=datas)
         if profile.check_password(request.data.get("password")):
             if serializer.is_valid():
@@ -278,6 +275,7 @@ class ProfileView(APIView):
 
 
 # 방명록 crud
+
 
 class GuestBookView(APIView):
     def get(self, request, profile_id):
@@ -315,7 +313,6 @@ class GuestBookDetailView(APIView):
             return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
 
 
-
 class MyPasswordResetView(PasswordResetView):
     html_email_template_name = "email.html"
     template_name = "password_reset_form.html"
@@ -338,4 +335,3 @@ class MyPasswordResetConfirmView(PasswordResetConfirmView):
 class MyPasswordResetCompleteView(PasswordResetCompleteView):
     template_name = "password_reset_complete.html"
     title = "비밀번호 초기화 완료"
-

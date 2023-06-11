@@ -18,6 +18,7 @@ class MyUserManager(BaseUserManager):
 
         user.set_password(password)
         user.save(using=self._db)
+        Profile.objects.create(user=user)
         return user
 
     def create_superuser(self, email, name, password=None):
@@ -28,7 +29,6 @@ class MyUserManager(BaseUserManager):
         )
         user.is_admin = True
         user.save(using=self._db)
-        Profile.objects.create(user=user)
         return user
 
 
@@ -130,4 +130,3 @@ class PasswordReset(models.Model):
     email = models.EmailField()
     uuid = models.CharField(max_length=255)
     is_verify = models.BooleanField(default=False)
-
