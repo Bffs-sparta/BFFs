@@ -1,33 +1,38 @@
+
 from .models import User, Profile, GuestBook, Verify
 
-from django.core.mail import EmailMessage
-from django.template.loader import render_to_string
+from decouple import config
+import os
+import requests
+
+
+from django.contrib.auth.views import (
+    PasswordResetView,
+    PasswordResetDoneView,
+    PasswordResetConfirmView,
+    PasswordResetCompleteView,
+)
 from django.utils.crypto import get_random_string
 
-from rest_framework import permissions
-from rest_framework import status
-from rest_framework.generics import get_object_or_404
+from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import *
-from threading import Timer
-from .validators import email_validator
-import requests
-import os
-from decouple import config
-from .jwt_tokenserializer import CustomTokenObtainPairSerializer
 
-from user.serializers import (
-    UserSerializer,
+from .models import User, Profile, GuestBook, Verify
+from .serializers import (
+    UserCreateSerializer,
+    UserDelSerializer,
     UserProfileSerializer,
     UserProfileUpdateSerializer,
-    UserDelSerializer,
     GuestBookSerializer,
     GuestBookCreateSerializer,
 )
+from .validators import email_validator
+from .jwt_tokenserializer import CustomTokenObtainPairSerializer
+from .tasks import verifymail
+
 
 from .models import User, Profile
 
@@ -35,18 +40,9 @@ from .models import User, Profile
 class SendEmailView(APIView):
     permission_classes = [permissions.AllowAny]
 
-    @classmethod
-    def timer_delet(*input_string):
-        try:
-            target = input_string[1]
-            email_list = Verify.objects.filter(email=target)
-            email_list.delete()
-        except:
-            pass
-
     def post(self, request):
-        email = request.data.get("email", None)
-        if email is None:
+        email = request.data.get("email", "")
+        if not email:
             return Response(
                 {"error": "이메일을 작성해 주세요"}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -60,23 +56,15 @@ class SendEmailView(APIView):
                     {"error": "이미 가입한 회원입니다."}, status=status.HTTP_400_BAD_REQUEST
                 )
             else:
-                subject = "BFFs 이메일 인증코드 메일입니다."
-                from_email = config("EMAIL")
-                code = get_random_string(length=6)
                 if Verify.objects.filter(email=email).exists():
                     email_list = Verify.objects.filter(email=email)
                     email_list.delete()
-                html_content = render_to_string("verfication.html", {"code": code})
-                send_email = EmailMessage(subject, html_content, from_email, [email])
-                send_email.content_subtype = "html"
-                send_email.send()
+                code = get_random_string(length=6)
+                verifymail.delay(email, code)
                 Verify.objects.create(email=email, code=code)
+                return Response({"code": code}, status=status.HTTP_200_OK)  # 테스트용
 
-                timer = 600
-                Timer(timer, self.timer_delet, (email,)).start()  # 테스트코드에서 있으면 10분동안 멈춤
 
-                # 테스트용
-                return Response({"code": code}, status=status.HTTP_200_OK)
                 # return Response({'success':'success'},status=status.HTTP_200_OK)
 
 
@@ -102,7 +90,8 @@ class VerificationEmailView(APIView):
                 return Response({"msg": "메일인증이 완료되었습니다"}, status=status.HTTP_200_OK)
             else:
                 return Response(
-                    {"error": "인증 코드가 틀렸습니다"}, status=status.HTTP_400_BAD_REQUEST
+                    {"error": "이메일이나 인증코드가 인증 코드가 틀렸습니다"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
 
@@ -120,15 +109,141 @@ class LoginView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
+
+class NaverLoginView(APIView):
+    def get(self, request):
+        CLIENT_ID = config("NAVER_CLIENT_ID")
+        STATE_STRING = get_random_string(16)
+        CALLBACK_URL = config("BACKEND_URL") + "/user/naver/callback/"
+        URL = f"https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id={CLIENT_ID}&state={STATE_STRING}&redirect_uri={CALLBACK_URL}"
+        return Response({"url": URL}, status=status.HTTP_200_OK)
+
+
+class NaverCallbackView(APIView):
+    def get(self, request):
+        CLIENT_ID = config("NAVER_CLIENT_ID")
+        CLIENT_SECRET = config("NAVER_CLIENT_SECRET")
+        CODE = request.GET.get("code")
+        STATE = request.GET.get("state")
+        URL = f"https://nid.naver.com/oauth2.0/token?grant_type=authorization_code&client_id={CLIENT_ID}&client_secret={CLIENT_SECRET}&code={CODE}&state={STATE}"
+        response = requests.get(URL)
+        response_json = response.json()
+        access_token = response_json.get("access_token")
+
+        TOKEN_URL = "https://openapi.naver.com/v1/nid/me"
+        user_response = requests.get(
+            TOKEN_URL, headers={"Authorization": "Bearer " + access_token}
+        )
+        user_response_json = user_response.json()
+        user_data = user_response_json.get("response")
+        email = user_data.get("email")
+        name = user_data.get("name")
+        social = "naver"
+        return socialLogin(name=name, email=email, login_type=social)
+
+
+class GoogleLoginView(APIView):
+    def get(self, request):
+        CLIENT_ID = config("KAKAO_CLIENT_ID")
+        BACKEND_URL = config("BACKEND_URL")
+        CALLBACK_URL = BACKEND_URL + "/user/google/callback/"
+        URL = "https://accounts.google.com/o/oauth2/v2/auth"
+        return Response(
+            {"url": URL, "redirecturi": CALLBACK_URL, "client_id": CLIENT_ID},
+            status=status.HTTP_200_OK,
+        )
+
+
+class GoogleCallbackView(APIView):
+    def get(self, request):
+        code = request.GET.get("code")
+        pass
+
+
+class KakaoLoginView(APIView):
+    def get(self, request):
+        CLIENT_ID = config("KAKAO_CLIENT_ID")
+        BACKEND_URL = config("BACKEND_URL")
+        CALLBACK_URL = BACKEND_URL + "/user/kakao/callback/"
+        URL = "https://kauth.kakao.com/oauth/authorize"
+        return Response(
+            {"url": URL, "redirecturi": CALLBACK_URL, "client_id": CLIENT_ID},
+            status=status.HTTP_200_OK,
+        )
+
+
+class KakaoCallbackView(APIView):
+    def get(self, request):
+        code = request.GET.get("code")  # url에서 code부분만 가져옴
+        data = {
+            "grant_type": "authorization_code",
+            "client_id": config("KAKAO_CLIENT_ID"),
+            "redirect_uri": config("BACKEND_URL") + "/user/kakao/callback/",
+            "code": code,
+            "client_secret": config("KAKAO_CLIENT_SECRET"),
+        }
+        access_token_request = requests.post(
+            "https://kauth.kakao.com/oauth/token",
+            headers={"Content-Type": "application/x-www-form-urlencoded;charset=utf-8"},
+            data=data,
+        )
+        token_data = access_token_request.json()
+        access_token = token_data.get("access_token")
+        user_data_response = requests.get(
+            "https://kapi.kakao.com/v2/user/me",
+            headers={"Authorization": f"Bearer {access_token}"},
+        )
+        user_data = user_data_response.json()
+        kakao_account = user_data.get("kakao_account")
+        profile = kakao_account.get("profile")
+
+        name = profile.get("nickname")
+        email = kakao_account.get("email")
+        social = "kakao"
+
+        profile_image = profile.get("profile_image_url")
+        age_range = kakao_account.get("age_range")
+        return socialLogin(name=name, email=email, login_type=social)
+
+
+def socialLogin(**kwargs):
+    if User.objects.filter(email=kwargs.get("email")).exists():
+        user = User.objects.get(email=kwargs.get("email"))
+        if user.login_type != kwargs.get("social"):
+            return Response(
+                {"error": "선택한 소셜계정 외 다른 가입방법으로 가입된 이메일입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            return get_token(user)
+    else:
+        user = User.objects.create_user(**kwargs)
+        user.set_unusable_password()
+        user.save()
+        return get_token(user)
+
+
+def get_token(user):
+    refresh_token = RefreshToken.for_user(user)
+    access_token = CustomTokenObtainPairSerializer.get_token(user)
+    return Response(
+        {"access_token": str(access_token), "refresh_token": str(refresh_token)},
+        status=status.HTTP_200_OK,
+    )
+
+
+
 # 프로필 ru
 
 
 class ProfileView(APIView):
-    # def get_object(self, user_id):
-    #     return get_object_or_404(User, id=user_id)
 
     def get(self, request, user_id):
         profile = Profile.objects.get(user_id=user_id)
+
+    def get(self, request, user_id):
+        profile = Profile.objects.get(id=user_id)
+
 
         serializer = UserProfileSerializer(profile)
 
@@ -154,7 +269,9 @@ class ProfileView(APIView):
     def delete(self, request, user_id):
         profile = User.objects.get(id=user_id)
         datas = request.data.copy()
+
         datas["is_withdraw"] = False
+        
         serializer = UserDelSerializer(profile, data=datas)
         if profile.check_password(request.data.get("password")):
             if serializer.is_valid():
@@ -162,7 +279,6 @@ class ProfileView(APIView):
                 return Response(
                     {"message": "계정 비활성화 완료"}, status=status.HTTP_204_NO_CONTENT
                 )
-
         else:
             return Response(
                 {"message": f"패스워드가 다릅니다"}, status=status.HTTP_400_BAD_REQUEST
@@ -170,7 +286,6 @@ class ProfileView(APIView):
 
 
 # 방명록 crud
-
 
 class GuestBookView(APIView):
     def get(self, request, profile_id):
@@ -206,3 +321,29 @@ class GuestBookDetailView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
+
+
+
+class MyPasswordResetView(PasswordResetView):
+    html_email_template_name = "email.html"
+    template_name = "password_reset_form.html"
+    email_template_name = "email.html"
+    subject_template_name = "email.txt"
+    success_url = "done/"
+
+
+class MyPasswordResetDoneView(PasswordResetDoneView):
+    template_name = "password_reset_done.html"
+    title = "비밀번호 문자 전송"
+
+
+class MyPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = "password_reset_confirm.html"
+    success_url = "/user/password/reset/complete/"
+    title = "비밀번호 초기화"
+
+
+class MyPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = "password_reset_complete.html"
+    title = "비밀번호 초기화 완료"
+

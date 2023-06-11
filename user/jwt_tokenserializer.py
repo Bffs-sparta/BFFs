@@ -1,16 +1,17 @@
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework import serializers
-from .models import User
 from rest_framework.generics import get_object_or_404
 from rest_framework_simplejwt.serializers import (
     TokenObtainSerializer,
     update_last_login,
     authenticate,
-    TokenObtainPairSerializer,
     RefreshToken,
 )
 from rest_framework_simplejwt.settings import api_settings
-from datetime import timedelta
-from django.utils import timezone
+
+from .models import User
 
 
 class CustomTokenObtainPairSerializer(TokenObtainSerializer):
