@@ -1,12 +1,3 @@
-
-from django.test import TestCase
-from rest_framework.test import APITestCase
-from rest_framework import status
-
-from django.urls import reverse
-
-from .models import User
-
 from datetime import timedelta
 from django.urls import reverse
 from django.utils import timezone
@@ -14,12 +5,6 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from .models import User, Verify
-
-
-
-# Create your tests here.
-
-
 
 class UserProfileViewTest(APITestCase):
     # profile read

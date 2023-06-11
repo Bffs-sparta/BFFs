@@ -1,10 +1,6 @@
-
-from .models import User, Profile, GuestBook, Verify
-
 from decouple import config
 import os
 import requests
-
 
 from django.contrib.auth.views import (
     PasswordResetView,
@@ -32,10 +28,6 @@ from .serializers import (
 from .validators import email_validator
 from .jwt_tokenserializer import CustomTokenObtainPairSerializer
 from .tasks import verifymail
-
-
-from .models import User, Profile
-
 
 class SendEmailView(APIView):
     permission_classes = [permissions.AllowAny]
