@@ -21,6 +21,8 @@ urlpatterns = [
         views.GuestBookDetailView.as_view(),
         name="guestbook_detail_view",
     ),
+
+
     path("password/reset/", views.MyPasswordResetView.as_view(), name="password_reset"),
     path(
         "password/reset/done/",
@@ -43,4 +45,5 @@ urlpatterns = [
     path(
         "google/callback/", views.GoogleCallbackView.as_view(), name="google_callback"
     ),
+
 ]
