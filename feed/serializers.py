@@ -1,10 +1,10 @@
-from rest_framework import serializers
-from feed.models import Feed, Comment, Cocomment, Category, GroupPurchase, JoinedUser
-from community.models import CommunityAdmin
-from community.serializers import CommunityAdminSerializer
 from django.utils import timezone
-from rest_framework.response import Response
+from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
+from rest_framework.response import Response
+
+from community.models import CommunityAdmin
+from feed.models import Category, Comment, Cocomment, Feed, GroupPurchase, JoinedUser
 
 
 class CategorySerializer(serializers.ModelSerializer):

@@ -1,25 +1,27 @@
-from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
+from rest_framework import filters, permissions, status
+from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.response import Response
-from rest_framework import status, permissions
-from rest_framework.generics import get_object_or_404
-from feed.models import Feed, Comment, Cocomment, GroupPurchase, JoinedUser
+from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
+
 from community.models import Community
-from rest_framework import generics
-from rest_framework import filters
-
-
+from feed.models import Comment, Cocomment, Feed, GroupPurchase, JoinedUser, Category
 from feed.serializers import (
-    FeedListSerializer,
-    FeedDetailSerializer,
-    FeedCreateSerializer,
     CommentSerializer,
     CocommentSerializer,
+    FeedCreateSerializer,
+    FeedDetailSerializer,
+    FeedListSerializer,
     FeedNotificationSerializer,
     GroupPurchaseCreateSerializer,
-    GroupPurchaseListSerializer,
     GroupPurchaseDetailSerializer,
+    GroupPurchaseListSerializer,
 )
+
+
+class CustomPagination(PageNumberPagination):
+    page_size = 4
+    page_size_query_param = "page_size"
 
 
 class CommentView(APIView):
@@ -61,6 +63,8 @@ class CommentView(APIView):
 
 class CocommentView(APIView):
     # 대댓글 cocomment CRUD view
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
     def get(self, request, comment_id):
         cocomment = Cocomment.objects.filter(comment_id=comment_id).order_by(
             "created_at"
@@ -74,8 +78,6 @@ class CocommentView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-    permission_classes = [permissions.IsAuthenticated]
-
     def post(self, request, comment_id):
         serializer = CocommentSerializer(data=request.data)
         if serializer.is_valid():
@@ -88,7 +90,7 @@ class CocommentView(APIView):
         cocomment = get_object_or_404(Cocomment, id=cocomment_id)
         if cocomment.user != request.user:
             return Response(
-                {"error": "대댓글 작성자만 수정할 수 있습니다."}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "대댓글 작성자만 수정할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN
             )
         else:
             serializer = CocommentSerializer(cocomment, data=request.data)
@@ -110,10 +112,12 @@ class CocommentView(APIView):
 
 
 class FeedListView(APIView):
+    pagination_class = CustomPagination()
+
     # feed 전체 리스트 view
     def get(self, request, community_name):
         community = Community.objects.get(title=community_name)
-        feed_list = Feed.objects.filter(community_id=community.id).order_by(
+        feed_list = Feed.objects.filter(category__community=community).order_by(
             "-created_at"
         )
         if not feed_list:
@@ -121,27 +125,44 @@ class FeedListView(APIView):
                 {"message": "아직 게시글이 없습니다."}, status=status.HTTP_204_NO_CONTENT
             )
         else:
-            serializer = FeedListSerializer(feed_list, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            paginated_feed_list = self.pagination_class.paginate_queryset(
+                feed_list, request
+            )
+            serializer = FeedListSerializer(paginated_feed_list, many=True)
+            pagination_serializer = self.pagination_class.get_paginated_response(
+                serializer.data
+            )
+            return Response(pagination_serializer.data, status=status.HTTP_200_OK)
 
 
 class FeedCategoryListView(APIView):
+    pagination_class = CustomPagination()
+
     # feed 카테고리 리스트 view
-    def get(self, request, community_name, category_id):
-        community = Community.objects.get(title=community_name)
-        feed_list = Feed.objects.filter(category=category_id).order_by("-created_at")
+    def get(self, request, community_name, category_name):
+        feed_list = Feed.objects.filter(
+            category__community__title=community_name,
+            category__category_name=category_name,
+        ).order_by("-created_at")
         if not feed_list:
             return Response(
                 {"message": "아직 카테고리 게시글이 없습니다."}, status=status.HTTP_204_NO_CONTENT
             )
         else:
-            serializer = FeedListSerializer(feed_list, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            paginated_feed_list = self.pagination_class.paginate_queryset(
+                feed_list, request
+            )
+            serializer = FeedListSerializer(paginated_feed_list, many=True)
+            pagination_serializer = self.pagination_class.get_paginated_response(
+                serializer.data
+            )
+            return Response(pagination_serializer.data, status=status.HTTP_200_OK)
 
 
 class FeedDetailView(APIView):
     # feed 상세보기, 수정, 삭제 view
     # 조회수 기능을 위한 모델 세팅
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     model = Feed
 
     # feed 상세 및 comment,cocomment 함께 가져오기
@@ -152,6 +173,7 @@ class FeedDetailView(APIView):
         comment = feed.comment.all().order_by("created_at")
         # 댓글 유무 여부 확인
         if not comment:
+            feed.click
             return Response(
                 {
                     "message": "조회수 +1",
@@ -179,13 +201,11 @@ class FeedDetailView(APIView):
     #     feed.click
     #     return Response("조회수 +1", status=status.HTTP_200_OK)
 
-    permission_classes = [permissions.IsAuthenticated]
-
     def put(self, request, feed_id):
         feed = get_object_or_404(Feed, id=feed_id)
         if feed.user != request.user:
             return Response(
-                {"error": "게시글 작성자만 수정할 수 있습니다."}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "게시글 작성자만 수정할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN
             )
         else:
             serializer = FeedCreateSerializer(feed, data=request.data)
@@ -210,11 +230,11 @@ class FeedCreateView(APIView):
     # feed 생성 view
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, community_name):  # testcomu
+    def post(self, request, category_name):  # testcomu
         serializer = FeedCreateSerializer(data=request.data)
-        community = Community.objects.get(title=community_name)
+        category = get_object_or_404(Category, category_name=category_name)
         if serializer.is_valid():
-            serializer.save(community=community, user=request.user)
+            serializer.save(user=request.user, category=category)
             return Response({"message": "게시글이 작성되었습니다"}, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -222,6 +242,8 @@ class FeedCreateView(APIView):
 
 class LikeView(APIView):
     # 좋아요 기능
+    permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request, feed_id):
         feed = get_object_or_404(Feed, id=feed_id)
         if request.user in feed.likes.all():
@@ -328,7 +350,7 @@ class GroupPurchaseDetailView(APIView):
         purchasefeed = get_object_or_404(GroupPurchase, id=grouppurchase_id)
         if purchasefeed.user != request.user:
             return Response(
-                {"error": "공구 게시글 작성자만 수정할 수 있습니다."}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "공구 게시글 작성자만 수정할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN
             )
         else:
             serializer = GroupPurchaseCreateSerializer(purchasefeed, data=request.data)

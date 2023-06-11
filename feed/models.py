@@ -1,20 +1,23 @@
-from django.db import models
-from hitcount.models import HitCountMixin, HitCount
 from django.conf import settings
-from user.models import User
-from community.models import Community
-from user.models import Profile
-from django.utils import timezone
+from django.db import models
 from django.db.models import Count
+from django.utils import timezone
+from hitcount.models import HitCountMixin
+
+from community.models import Community
+from user.models import User, Profile
 
 
 # 일반 feed 모델
 class Feed(models.Model, HitCountMixin):
-    community = models.ForeignKey(
-        Community, on_delete=models.CASCADE, related_name="community_feeds"
-    )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="author"
+    )
+    category = models.ForeignKey(
+        "feed.Category",
+        on_delete=models.CASCADE,
+        related_name="feed_category",
+        blank=False,
     )
     title = models.CharField(max_length=50)
     content = models.TextField(blank=True)
@@ -26,10 +29,6 @@ class Feed(models.Model, HitCountMixin):
         "user.User", blank=True, default=[], related_name="feed_likes"
     )
     is_notification = models.BooleanField(default=False)
-
-    category = models.ManyToManyField(
-        "feed.Category", related_name="feed_category", blank=False
-    )
 
     # 조회수 코드
     view_count = models.PositiveIntegerField(default=0)
@@ -46,6 +45,9 @@ class Feed(models.Model, HitCountMixin):
 
 # community 내 feed에 대한 카테고리 모델, 전체/자유/모집/공구
 class Category(models.Model):
+    community = models.ForeignKey(
+        Community, on_delete=models.CASCADE, related_name="community_category"
+    )
     category_name = models.CharField(max_length=20)
 
     class Meta:
