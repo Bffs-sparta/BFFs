@@ -343,3 +343,264 @@ class FeedDetailViewTest(APITestCase):
             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
         )
         self.assertEqual(response.status_code, 200)
+
+
+class CommentTestView(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user_data = {
+            "email": "test1@naver.com",
+            "name": "test1",
+            "password": "test123!",
+        }
+        cls.user = User.objects.create_user(**cls.user_data)
+        cls.user2_data = {
+            "email": "test2@naver.com",
+            "name": "test2",
+            "password": "test123!",
+        }
+        cls.user2 = User.objects.create_user(**cls.user2_data)
+        cls.community = Community.objects.create(
+            title="title1", introduction="introduction1"
+        )
+        cls.category = Category.objects.create(
+            community=cls.community, category_name="얘기해요"
+        )
+        cls.feed = Feed.objects.create(
+            user=cls.user, category=cls.category, title="title1", content="content1"
+        )
+        cls.path = reverse("comment_create_view", kwargs={"feed_id": 1})
+        cls.comment_path = reverse("comment_put_delete_view", kwargs={"comment_id": 1})
+        cls.comment = Comment.objects.create(
+            feed=cls.feed, user=cls.user, text="comment1"
+        )
+
+    def setUp(self):
+        self.access_token = self.client.post(reverse("login"), self.user_data).data.get(
+            "access"
+        )
+        self.access_token2 = self.client.post(
+            reverse("login"), self.user2_data
+        ).data.get("access")
+
+    def test_comment_create(self):
+        """댓글 생성"""
+        response = self.client.post(
+            path=self.path,
+            data={
+                "feed": self.feed,
+                "text": "comment1",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 201)
+
+    def test_comment_create_not_user(self):
+        """댓글 생성"""
+        response = self.client.post(
+            path=self.path,
+            data={
+                "feed": self.feed,
+                "text": "comment1",
+            },
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_comment_create_not_include_text(self):
+        """댓글 생성"""
+        response = self.client.post(
+            path=self.path,
+            data={
+                "feed": self.feed,
+                "text": "",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_comment_put(self):
+        response = self.client.put(
+            path=self.comment_path,
+            data={
+                "text": "comment2",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_comment_put_not_user(self):
+        response = self.client.put(
+            path=self.comment_path,
+            data={
+                "text": "comment2",
+            },
+        )
+
+        self.assertEqual(response.status_code, 401)
+
+    def test_comment_put_not_include_test(self):
+        response = self.client.put(
+            path=self.comment_path,
+            data={
+                "text": "",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_comment_put_notMatch_user(self):
+        response = self.client.put(
+            path=self.comment_path,
+            data={
+                "text": "comment2",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_comment_delete(self):
+        response = self.client.delete(
+            path=self.comment_path,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_comment_delete_not_user(self):
+        response = self.client.delete(
+            path=self.comment_path,
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_comment_delelte_notMatch_user(self):
+        response = self.client.delete(
+            path=self.comment_path,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+        )
+        self.assertEqual(response.status_code, 403)
+
+
+class CocommentViewTest(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user_data = {
+            "email": "test1@naver.com",
+            "name": "test1",
+            "password": "test123!",
+        }
+        cls.user = User.objects.create_user(**cls.user_data)
+        cls.user2_data = {
+            "email": "test2@naver.com",
+            "name": "test2",
+            "password": "test123!",
+        }
+        cls.user2 = User.objects.create_user(**cls.user2_data)
+        cls.community = Community.objects.create(
+            title="title1", introduction="introduction1"
+        )
+        cls.category = Category.objects.create(
+            community=cls.community, category_name="얘기해요"
+        )
+        cls.feed = Feed.objects.create(
+            user=cls.user, category=cls.category, title="title1", content="content1"
+        )
+        cls.comment = Comment.objects.create(
+            feed=cls.feed, user=cls.user, text="comment1"
+        )
+        cls.cocomment = Cocomment.objects.create(
+            comment=cls.comment, user=cls.user, text="cocoment1"
+        )
+
+        cls.path = reverse("cocomment_create_view", kwargs={"comment_id": 1})
+        cls.cocomment_path = reverse(
+            "cocomment_put_delete_view", kwargs={"cocomment_id": 1}
+        )
+
+    def setUp(self):
+        self.access_token = self.client.post(reverse("login"), self.user_data).data.get(
+            "access"
+        )
+        self.access_token2 = self.client.post(
+            reverse("login"), self.user2_data
+        ).data.get("access")
+
+    def test_cocomment_create(self):
+        response = self.client.post(
+            path=self.path,
+            data={
+                "text": "cocomment2",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 201)
+
+    def test_cocomment_create_not_user(self):
+        response = self.client.post(
+            path=self.path,
+            data={
+                "text": "cocomment2",
+            },
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_cocomment_create_not_test(self):
+        response = self.client.post(
+            path=self.path,
+            data={
+                "text": "",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_cocomment_put_not_user(self):
+        response = self.client.put(
+            path=self.cocomment_path,
+            data={
+                "text": "cocomment2",
+            },
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_cocomment_put_notMatch_user(self):
+        response = self.client.put(
+            path=self.cocomment_path,
+            data={
+                "text": "cocomment2",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_cocomment_put_not_text(self):
+        response = self.client.put(
+            path=self.cocomment_path,
+            data={
+                "text": "",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_cocomment_delete(self):
+        response = self.client.delete(
+            path=self.cocomment_path,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_cocomment_delete_not_user(self):
+        response = self.client.delete(
+            path=self.cocomment_path,
+        )
+        self.assertEqual(response.status_code, 401)
+
+    def test_cocomment_delete_notMatch_user(self):
+        response = self.client.delete(
+            path=self.cocomment_path,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+        )
+        self.assertEqual(response.status_code, 403)
