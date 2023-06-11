@@ -50,7 +50,7 @@ urlpatterns = [
     ),
     # feed 카테고리 list get
     path(
-        "<str:community_name>/<int:category_id>/",
+        "<str:community_name>/category/<str:category_name>/",
         FeedCategoryListView.as_view(),
         name="feed_category_list_view",
     ),

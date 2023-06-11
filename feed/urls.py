@@ -15,7 +15,7 @@ urlpatterns = [
     path("<int:feed_id>/", FeedDetailView.as_view(), name="feed_detail_view"),
     # feed 생성
     path(
-        "<str:community_name>/feed/",
+        "<str:category_name>/feed/",
         FeedCreateView.as_view(),
         name="feed_create_view",
     ),

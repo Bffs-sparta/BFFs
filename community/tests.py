@@ -93,10 +93,21 @@ class CommunityViewTest(APITestCase):
         )
         self.assertEqual(response.status_code, 401)
 
+    def test_put_community_no_comu(self):
+        """커뮤니티 없을때 커뮤니티 수정 실패"""
+        response = self.client.put(
+            path=reverse("community_detail_view", kwargs={"community_name": "title3"}),
+            data=self.community_edit_data,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 404)
+
     def test_put_community_no_admin(self):
         """admin 아닐때 커뮤니티 수정 실패"""
         response = self.client.put(
-            path=self.path_name, HTTP_AUTHORIZATION=f"Bearer {self.access_token2}"
+            path=self.path_name,
+            data=self.community_edit_data,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
         )
         self.assertEqual(response.status_code, 401)
 
@@ -115,6 +126,14 @@ class CommunityViewTest(APITestCase):
             path=self.path_name,
         )
         self.assertEqual(response.status_code, 401)
+
+    def test_delete_community_no_comu(self):
+        """커뮤니티 없을때 커뮤니티 삭제 실패"""
+        response = self.client.delete(
+            path=reverse("community_detail_view", kwargs={"community_name": "title3"}),
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 404)
 
     def test_delete_community_no_admin(self):
         """admin 아닐때 커뮤니티 삭제 실패"""
@@ -176,6 +195,9 @@ class CommunitySubAdminViewTest(APITestCase):
         cls.path = reverse(
             "community_subadmin_view", kwargs={"community_name": "title1"}
         )
+        cls.path2 = reverse(
+            "community_subadmin_view", kwargs={"community_name": "title2"}
+        )
         cls.exist_subadmin_data = {"user": 2}
 
     def setUp(self):
@@ -228,6 +250,15 @@ class CommunitySubAdminViewTest(APITestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_post_subadmin_no_comu(self):
+        """community 없을 때 sub admin 생성 실패"""
+        response = self.client.post(
+            path=self.path2,
+            data={"user": 3},
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 404)
+
     def test_post_subadmin(self):
         """sub admin 생성 성공"""
         response = self.client.post(
@@ -262,6 +293,15 @@ class CommunitySubAdminViewTest(APITestCase):
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 400)
+
+    def test_delete_subadmin_no_comu(self):
+        """community 없을 때 sub admin 삭제 실패"""
+        response = self.client.post(
+            path=self.path2,
+            data=self.exist_subadmin_data,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 404)
 
     def test_delete_subadmin(self):
         """sub admin 삭제 성공"""
@@ -300,6 +340,9 @@ class CommunityForbiddenViewTest(APITestCase):
         cls.path = reverse(
             "community_forbidden_view", kwargs={"community_name": "title1"}
         )
+        cls.path2 = reverse(
+            "community_forbidden_view", kwargs={"community_name": "title2"}
+        )
         cls.word_data = {"word": "word"}
         ForbiddenWord.objects.create(word="word2", community=cls.community)
 
@@ -318,6 +361,13 @@ class CommunityForbiddenViewTest(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+    def test_get_forbiddenword_no_comu(self):
+        """comu 없을 때 금지어 조회 실패"""
+        response = self.client.get(
+            path=self.path2,
+        )
+        self.assertEqual(response.status_code, 404)
+
     def test_post_forbiddenword_fail_if_not_logged_in(self):
         """금지어 생성시 로그인 확인"""
         response = self.client.post(
@@ -325,6 +375,15 @@ class CommunityForbiddenViewTest(APITestCase):
             data=self.word_data,
         )
         self.assertEqual(response.status_code, 401)
+
+    def test_post_forbiddenword_no_comu(self):
+        """comu 없을 때 금지어 생성 실패"""
+        response = self.client.get(
+            path=self.path2,
+            data=self.word_data,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 404)
 
     def test_post_exist_forbiddenword(self):
         """이미 존재하는 금지어 생성 실패"""
@@ -369,6 +428,9 @@ class CommunityBookmarkViewTest(APITestCase):
         cls.path = reverse(
             "community_bookmark_view", kwargs={"community_name": "title1"}
         )
+        cls.path2 = reverse(
+            "community_bookmark_view", kwargs={"community_name": "title2"}
+        )
 
     def setUp(self):
         self.access_token = self.client.post(reverse("login"), self.user_data).data[
@@ -381,6 +443,13 @@ class CommunityBookmarkViewTest(APITestCase):
             path=self.path,
         )
         self.assertEqual(response.status_code, 401)
+
+    def test_add_bookmark_no_comu(self):
+        """community 없을 때 북마크 등록 실패"""
+        response = self.client.post(
+            path=self.path2, HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+        )
+        self.assertEqual(response.status_code, 404)
 
     def test_add_bookmark(self):
         """북마크 등록 성공"""
