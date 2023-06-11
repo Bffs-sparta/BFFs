@@ -1,7 +1,8 @@
-from rest_framework import filters, generics, permissions, status
+from rest_framework import filters, permissions, status
 from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
 
 from community.models import Community
 from feed.models import Comment, Cocomment, Feed, GroupPurchase, JoinedUser
@@ -16,6 +17,11 @@ from feed.serializers import (
     GroupPurchaseDetailSerializer,
     GroupPurchaseListSerializer,
 )
+
+
+class CustomPagination(PageNumberPagination):
+    page_size = 4
+    page_size_query_param = 'page_size'
 
 
 class CommentView(APIView):
@@ -106,33 +112,40 @@ class CocommentView(APIView):
 
 
 class FeedListView(APIView):
+    pagination_class = CustomPagination()
+
     # feed 전체 리스트 view
     def get(self, request, community_name):
         community = Community.objects.get(title=community_name)
-        feed_list = Feed.objects.filter(community_id=community.id).order_by(
-            "-created_at"
-        )
+        feed_list = Feed.objects.filter(community_id=community.id).order_by("-created_at")
         if not feed_list:
             return Response(
-                {"message": "아직 게시글이 없습니다."}, status=status.HTTP_204_NO_CONTENT
+                {"message": "아직 게시글이 없습니다."},
+                status=status.HTTP_204_NO_CONTENT
             )
         else:
-            serializer = FeedListSerializer(feed_list, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            paginated_feed_list = self.pagination_class.paginate_queryset(feed_list, request)
+            serializer = FeedListSerializer(paginated_feed_list, many=True)
+            pagination_serializer = self.pagination_class.get_paginated_response(serializer.data)
+            return Response(pagination_serializer.data, status=status.HTTP_200_OK)
 
 
 class FeedCategoryListView(APIView):
+    pagination_class = CustomPagination()
+
     # feed 카테고리 리스트 view
     def get(self, request, community_name, category_id):
         community = Community.objects.get(title=community_name)
-        feed_list = Feed.objects.filter(category=category_id).order_by("-created_at")
+        feed_list = Feed.objects.filter(community_id=community.id, category=category_id).order_by("-created_at")
         if not feed_list:
             return Response(
                 {"message": "아직 카테고리 게시글이 없습니다."}, status=status.HTTP_204_NO_CONTENT
             )
         else:
-            serializer = FeedListSerializer(feed_list, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            paginated_feed_list = self.pagination_class.paginate_queryset(feed_list, request)
+            serializer = FeedListSerializer(paginated_feed_list, many=True)
+            pagination_serializer = self.pagination_class.get_paginated_response(serializer.data)
+            return Response(pagination_serializer.data, status=status.HTTP_200_OK)
 
 
 class FeedDetailView(APIView):
