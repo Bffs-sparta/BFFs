@@ -114,9 +114,8 @@ class GroupPurchase(models.Model, HitCountMixin):
     is_ended = models.BooleanField(default=False, help_text="공구 끝내기")
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, help_text="글 작성자")
-    person_limit = models.PositiveIntegerField(default=0, help_text="공구 제한 인원")
-    is_joined = models.ManyToManyField(
-        "feed.JoinedUser", default=[], related_name="joined_purchase"
+    person_limit = models.PositiveIntegerField(
+        default=0, help_text="공구 제한 인원, 자기자신을 빼고 입력"
     )
 
     location = models.CharField(max_length=100, help_text="만날 위치")
@@ -134,8 +133,12 @@ class GroupPurchase(models.Model, HitCountMixin):
     community = models.ForeignKey(
         Community, on_delete=models.CASCADE, related_name="community_purchases"
     )
-    category = models.ManyToManyField(
-        "feed.Category", related_name="purchase_category", blank=False, default="공구해요"
+    category = models.ForeignKey(
+        "feed.Category",
+        on_delete=models.CASCADE,
+        related_name="purchase_category",
+        blank=False,
+        default=3,
     )
 
     # 조회수 코드
@@ -153,31 +156,40 @@ class GroupPurchase(models.Model, HitCountMixin):
     def __str__(self):
         return f"만날 장소 : {str(self.location)} | 모집 인원 : {str(self.person_limit)}명 | 공구 물건 : {str(self.product_name)}"
 
-    def end_person_limit_point(self):
+    def check_end_person_limit_point(self, grouppurchase_id):
         """공구 제한 인원이 채워질 경우 공구 종료"""
-        is_joined = GroupPurchase.objects.annotate(Count(is_joined))
-        if person_count <= is_joined:
-            self.is_ended = True
-            self.save()
+        purchasefeed = GroupPurchase.objects.get(id=grouppurchase_id)
+        if purchasefeed.joined_user is None:
+            print("아직 신청 인원이 없음")
+            return False
+        else:
+            joined = purchasefeed.joined_user.count()
+            person_count = self.person_limit - joined
+            if person_count <= 0:
+                self.is_ended = True
+                self.save()
+                return True
+            else:
+                return False
 
-    def end_time_limit_point(self):
+    def check_end_time_limit_point(self):
         """cron을 사용하여 ended_at=기간이 지났을 경우 모집 종료"""
         pass
 
 
 # 공구에 참여한 유저 모델
 class JoinedUser(models.Model):
-    profile = models.ForeignKey(
-        Profile, on_delete=models.CASCADE, related_name="joined_user"
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user")
+    grouppurchase = models.ForeignKey(
+        GroupPurchase, on_delete=models.CASCADE, related_name="joined_user"
     )
-    grouppurchase = models.ForeignKey(GroupPurchase, on_delete=models.CASCADE)
     product_quantity = models.PositiveIntegerField()
     created_at = models.DateTimeField(default=timezone.now)
-    # is_deleted = models.BooleanField(default=False, help_text="공구 참여했다가 빠진 경우")
+    is_deleted = models.BooleanField(default=False, help_text="공구 참여했다가 빠진 경우")
 
     class Meta:
         verbose_name = "공구 지원자 현황(JoinedUser)"
         verbose_name_plural = "공구지원자 현황(JoinedUser)"
 
     def __str__(self):
-        return f"실명 :{self.profile.user.name} ({self.profile.region})"
+        return f"실명 :{self.user.name} ({self.user.profile.region})"

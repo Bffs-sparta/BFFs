@@ -55,4 +55,10 @@ urlpatterns = [
         GroupPurchaseDetailView.as_view(),
         name="grouppurchase_put_delete_view",
     ),
+    # grouppurchase 참여 / 취소
+    path(
+        "<int:grouppurchase_id>/join/",
+        views.GroupPurchaseJoinedUserView.as_view(),
+        name="grouppurchase_join_view",
+    ),
 ]
