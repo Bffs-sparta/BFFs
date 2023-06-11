@@ -13,8 +13,7 @@ def email_validator(email):
 
 def nickname_validator(nickname):
     nickname_validation = r"^[가-힣ㄱ-ㅎa-zA-Z0-9._-]{2,8}$"
-    
-    
+
     if not re.search(nickname_validation, str(nickname)):
         return True
     return False

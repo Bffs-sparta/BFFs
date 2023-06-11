@@ -110,7 +110,9 @@ class SignupView(APIView):
     def post(self, request):
         user_data = UserCreateSerializer(data=request.data)
         user_data.is_valid(raise_exception=True)
-        user_data.save()
+        user = user_data.save()
+        # user 생성될때 profile 생성
+        Profile.objects.create(user=user)
         return Response({"msg": "회원가입이 완료되었습니다."}, status=status.HTTP_201_CREATED)
 
 
@@ -126,7 +128,7 @@ class ProfileView(APIView):
     #     return get_object_or_404(User, id=user_id)
 
     def get(self, request, user_id):
-        profile = Profile.objects.get(id=user_id)
+        profile = Profile.objects.get(user_id=user_id)
 
         serializer = UserProfileSerializer(profile)
 
@@ -152,7 +154,7 @@ class ProfileView(APIView):
     def delete(self, request, user_id):
         profile = User.objects.get(id=user_id)
         datas = request.data.copy()
-        datas["is_active"] = False
+        datas["is_withdraw"] = False
         serializer = UserDelSerializer(profile, data=datas)
         if profile.check_password(request.data.get("password")):
             if serializer.is_valid():
@@ -160,6 +162,7 @@ class ProfileView(APIView):
                 return Response(
                     {"message": "계정 비활성화 완료"}, status=status.HTTP_204_NO_CONTENT
                 )
+
         else:
             return Response(
                 {"message": f"패스워드가 다릅니다"}, status=status.HTTP_400_BAD_REQUEST

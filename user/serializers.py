@@ -5,7 +5,7 @@ from .models import User, Profile, Verify
 from user.validators import (
     nickname_validator,
 )
-
+from django.utils import timezone
 from django.core.files.storage import default_storage
 from uuid import uuid4
 import os
@@ -110,10 +110,15 @@ class UserDelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ("is_active", "user_password")
+        fields = ("is_withdraw", "user_password")
 
     def get_user_password(self, obj):
         return obj.user.password
+
+    def withdraw(self):
+        self.is_withdraw = True
+        self.withdraw_at = timezone.now()
+        self.save()
 
 
 class GuestBookSerializer(serializers.ModelSerializer):
