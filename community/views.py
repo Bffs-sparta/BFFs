@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from user.models import User
+from feed.models import Category
 from .models import Community, CommunityAdmin, ForbiddenWord
 from .serializers import (
     CommunitySerializer,
@@ -32,6 +33,9 @@ class CommunityView(APIView):
         CommunityAdmin.objects.create(
             user=request.user, community=community, is_comuadmin=True
         )
+        base_categories = ["얘기해요", "모집해요", "공구해요"]
+        for base_category in base_categories:
+            Category.objects.create(community=community, category_name=base_category)
         return Response(
             {"data": serializer.data, "msg": "커뮤니티 생성 신청이 완료되었습니다."},
             status=status.HTTP_202_ACCEPTED,
@@ -68,7 +72,7 @@ class CommunitySubAdminView(APIView):
 
     def post(self, request, community_name):
         """서브 어드민 등록"""
-        community = Community.objects.get(title=community_name)
+        community = get_object_or_404(Community, title=community_name)
         community_admin = community.comu.get(is_comuadmin=True).user
         if community_admin == request.user:
             if community.comu.filter(user_id=request.data["user"]).exists():
@@ -91,7 +95,7 @@ class CommunitySubAdminView(APIView):
 
     def delete(self, request, community_name):
         """서브 어드민 삭제"""
-        community = Community.objects.get(title=community_name)
+        community = get_object_or_404(Community, title=community_name)
         community_admin = community.comu.get(is_comuadmin=True).user
         if community_admin == request.user:
             if community.comu.filter(user_id=request.data["user"]).exists():
@@ -112,14 +116,14 @@ class CommunityForbiddenView(APIView):
 
     def get(self, request, community_name):
         """커뮤니티 금지어 조회"""
-        community = Community.objects.get(title=community_name)
+        community = get_object_or_404(Community, title=community_name)
         forbiddenword = ForbiddenWord.objects.filter(community_id=community.id)
         serializer = ForbiddenWordSerializer(forbiddenword, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, community_name):
         """커뮤니티 금지어 생성"""
-        community = Community.objects.get(title=community_name)
+        community = get_object_or_404(Community, title=community_name)
         community_admin = community.comu.get(is_comuadmin=True).user
         community_subadmin = [
             admin.user for admin in community.comu.filter(is_subadmin=True)
@@ -146,7 +150,7 @@ class CommunityBookmarkView(APIView):
 
     def post(self, request, community_name):
         """북마크 등록 및 취소"""
-        community = Community.objects.get(title=community_name)
+        community = get_object_or_404(Community, title=community_name)
         if request.user in community.bookmarked.all():
             community.bookmarked.remove(request.user)
             return Response({"msg": "북마크가 취소되었습니다."}, status=status.HTTP_200_OK)

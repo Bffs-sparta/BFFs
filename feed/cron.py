@@ -4,27 +4,17 @@ from django.utils import timezone
 from feed.models import GroupPurchase
 
 
-class PurchaseCronJob(CronJobBase):
-    pass
-    # RUN_TIME = ["00:00"]
-    # schedule = Schedule(run_at_times=RUN_TIME)
-    # code = "feed.purchase_cron_job"
+class MyPurchaseCronJob(CronJobBase):
+    RUN_EVERY_MINS = 5
 
-    # def do(self):
-    #     six_months_ago = timezone.now() - timezone.timedelta(days=180)
-    #     one_year_ago = timezone.now() - timezone.timedelta(days=365)
-    #     five_years_ago = timezone.now() - timezone.timedelta(days=1825)
+    schedule = Schedule(run_every_mins=RUN_EVERY_MINS)
+    code = "feed.my_purchase_job"
 
-    #     dormant_users = User.objects.filter(last_login__lt=one_year_ago).update(
-    #         is_dormant=True
-    #     )
-    #     if dormant_users:
-    #         for user in dormant_users:
-    #             pass
+    def do(self):
+        now = timezone.now()
+        code = "feed.my_purchase_job"
 
-    #     User.objects.filter(withdraw_at__lt=five_years_ago).delete()
-
-    #     user_pwd_expiry = User.objects.filter(change_password_at=six_months_ago)
-    #     if user_pwd_expiry:
-    #         for user in user_pwd_expiry:
-    #             pass
+        end_grouppuchase = GroupPurchase.objects.filter(close_at__gte=now).update(
+            is_ended=True
+        )
+        # print("⭐️공구 마감⭐️")

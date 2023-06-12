@@ -50,7 +50,7 @@ urlpatterns = [
     ),
     # feed 카테고리 list get
     path(
-        "<str:community_name>/<int:category_id>/",
+        "<str:community_name>/category/<str:category_name>/",
         FeedCategoryListView.as_view(),
         name="feed_category_list_view",
     ),
@@ -64,8 +64,8 @@ urlpatterns = [
     path("<int:feed_id>/likes/", LikeView.as_view(), name="like_view"),
     # feed 게시글 공지 설정/취소
     path(
-        "<int:feed_id>/notification/",
-        FeedNotificationView.as_view(),
+        "<str:community_name>/<int:feed_id>/notification/",
+        feedviews.FeedNotificationView.as_view(),
         name="feed_notification_view",
     ),
     # grouppurchase 전체 list
