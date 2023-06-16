@@ -70,3 +70,11 @@ class CustomTokenObtainPairSerializer(TokenObtainSerializer):
             update_last_login(None, self.user)
 
         return {"access": attrs["access"], "refresh": attrs["refresh"]}
+
+    @classmethod
+    def social_token(self, user):
+        refresh = self.get_token(user)
+        if api_settings.UPDATE_LAST_LOGIN:
+            update_last_login(None, user)
+
+        return {"access": str(refresh.access_token), "refresh": str(refresh)}

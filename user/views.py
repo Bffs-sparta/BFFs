@@ -1,15 +1,18 @@
 from decouple import config
-import os
 import requests
 
 from django.contrib.auth.views import (
-    PasswordResetView,
-    PasswordResetDoneView,
     PasswordResetConfirmView,
     PasswordResetCompleteView,
 )
+from django.shortcuts import redirect
 from django.utils.crypto import get_random_string
-
+from rest_framework.generics import get_object_or_404
+from django.urls import reverse
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth.views import PasswordResetConfirmView
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -25,9 +28,13 @@ from .serializers import (
     GuestBookSerializer,
     GuestBookCreateSerializer,
 )
+from feed.serializers import FeedDetailSerializer
+from community.models import CommunityAdmin
+from community.serializers import CommunityCreateSerializer, MyCommunitySerializer
 from .validators import email_validator
 from .jwt_tokenserializer import CustomTokenObtainPairSerializer
-from .tasks import verifymail
+from .tasks import verifymail, pwresetMail
+
 
 
 class SendEmailView(APIView):
@@ -93,7 +100,6 @@ class SignupView(APIView):
         user_data.is_valid(raise_exception=True)
         user = user_data.save()
         # user 생성될때 profile 생성
-        Profile.objects.create(user=user)
         return Response({"msg": "회원가입이 완료되었습니다."}, status=status.HTTP_201_CREATED)
 
 
@@ -157,9 +163,9 @@ class KakaoLoginView(APIView):
         CLIENT_ID = config("KAKAO_CLIENT_ID")
         BACKEND_URL = config("BACKEND_URL")
         CALLBACK_URL = BACKEND_URL + "/user/kakao/callback/"
-        URL = "https://kauth.kakao.com/oauth/authorize"
+        URL = f"https://kauth.kakao.com/oauth/authorize?client_id={CLIENT_ID}&redirect_uri={CALLBACK_URL}&response_type=code"
         return Response(
-            {"url": URL, "redirecturi": CALLBACK_URL, "client_id": CLIENT_ID},
+            {"url": URL},
             status=status.HTTP_200_OK,
         )
 
@@ -201,7 +207,7 @@ class KakaoCallbackView(APIView):
 def socialLogin(**kwargs):
     if User.objects.filter(email=kwargs.get("email")).exists():
         user = User.objects.get(email=kwargs.get("email"))
-        if user.login_type != kwargs.get("social"):
+        if user.login_type != kwargs.get("login_type"):
             return Response(
                 {"error": "선택한 소셜계정 외 다른 가입방법으로 가입된 이메일입니다."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -216,27 +222,34 @@ def socialLogin(**kwargs):
 
 
 def get_token(user):
-    refresh_token = RefreshToken.for_user(user)
-    access_token = CustomTokenObtainPairSerializer.get_token(user)
-    return Response(
-        {"access_token": str(access_token), "refresh_token": str(refresh_token)},
-        status=status.HTTP_200_OK,
-    )
-
+    token = CustomTokenObtainPairSerializer.social_token(user)
+    callback_url = f"{config('FRONTEND_URL')}/callback?access_token={token.get('access')}&refresh_token={token.get('refresh')}"
+    return redirect(callback_url)
 
 # 프로필 ru
 
 
+# 프로필 id 받아오는 거로 수정할 예정!!!!!!!!!!!!!!!!!!
 class ProfileView(APIView):
     def get(self, request, user_id):
         profile = Profile.objects.get(user_id=user_id)
-
-    def get(self, request, user_id):
-        profile = Profile.objects.get(id=user_id)
-
-        serializer = UserProfileSerializer(profile)
-
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        profile_serializer = UserProfileSerializer(profile)
+        user = User.objects.get(id=user_id)
+        bookmark = user.bookmark.all()
+        bookmark_serializer = CommunityCreateSerializer(bookmark, many=True)
+        community = CommunityAdmin.objects.filter(user_id=user_id)
+        community_serializer = MyCommunitySerializer(community, many=True)
+        feed = user.author.all()
+        feed_serializer = FeedDetailSerializer(feed, many=True)
+        return Response(
+            {
+                "profile": profile_serializer.data,
+                "bookmark": bookmark_serializer.data,
+                "community": community_serializer.data,
+                "feed": feed_serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def patch(self, request, user_id):
         profile = Profile.objects.get(user_id=user_id)
@@ -258,9 +271,7 @@ class ProfileView(APIView):
     def delete(self, request, user_id):
         profile = User.objects.get(id=user_id)
         datas = request.data.copy()
-
         datas["is_withdraw"] = True
-
         serializer = UserDelSerializer(profile, data=datas)
         if profile.check_password(request.data.get("password")):
             if serializer.is_valid():
@@ -312,18 +323,17 @@ class GuestBookDetailView(APIView):
         else:
             return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
 
-
-class MyPasswordResetView(PasswordResetView):
-    html_email_template_name = "email.html"
-    template_name = "password_reset_form.html"
-    email_template_name = "email.html"
-    subject_template_name = "email.txt"
-    success_url = "done/"
-
-
-class MyPasswordResetDoneView(PasswordResetDoneView):
-    template_name = "password_reset_done.html"
-    title = "비밀번호 문자 전송"
+class MyPasswordResetView(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        user = get_object_or_404(User, email=email)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        reset_url = request.build_absolute_uri(
+            reverse("password_reset_confirm", kwargs={"uidb64": uid, "token": token})
+        )
+        pwresetMail.delay(email, reset_url)
+        return Response({"detail": "비밀번호 변경 메일 발송!"})
 
 
 class MyPasswordResetConfirmView(PasswordResetConfirmView):

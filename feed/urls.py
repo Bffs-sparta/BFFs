@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import (
+    FeedAllView,
     FeedDetailView,
     FeedCreateView,
     CommentView,
@@ -8,14 +9,17 @@ from .views import (
     CocommentView,
     GroupPurchaseCreateView,
     GroupPurchaseDetailView,
+    ImageUploadAndDeleteView,
 )
 
 urlpatterns = [
+    # 전체 feed 조회
+    path("", FeedAllView.as_view(), name="feed_view"),
     # 개별 feed 수정 삭제
     path("<int:feed_id>/", FeedDetailView.as_view(), name="feed_detail_view"),
     # feed 생성
     path(
-        "<str:category_name>/feed/",
+        "<int:category_id>/feed/",
         FeedCreateView.as_view(),
         name="feed_create_view",
     ),
@@ -55,6 +59,7 @@ urlpatterns = [
         GroupPurchaseDetailView.as_view(),
         name="grouppurchase_put_delete_view",
     ),
+    path("image/upload/", ImageUploadAndDeleteView.as_view(), name="image_upload_view"),
     # grouppurchase 참여 / 취소
     path(
         "<int:grouppurchase_id>/join/",

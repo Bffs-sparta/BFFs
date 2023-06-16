@@ -15,7 +15,6 @@ class MyUserManager(BaseUserManager):
             name=name,
             **extra_fields,
         )
-
         user.set_password(password)
         user.save(using=self._db)
         Profile.objects.create(user=user)

@@ -143,6 +143,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "region",
             "introduction",
             "profileimage",
+            "created_at",
         )
 
     def get_user_name(self, obj):

@@ -6,6 +6,9 @@ from hitcount.models import HitCountMixin
 from community.models import Community
 from user.models import User, Profile
 
+import os
+from uuid import uuid4
+
 
 # 일반 feed 모델
 class Feed(models.Model, HitCountMixin):
@@ -191,4 +194,20 @@ class JoinedUser(models.Model):
         verbose_name_plural = "공구지원자 현황(JoinedUser)"
 
     def __str__(self):
-        return f"실명 :{self.user.name} ({self.user.profile.region})"
+        return f"실명 :{self.profile.user.name} ({self.profile.region})"
+
+
+def change_image_name(instance, filename):
+    ext = os.path.splitext(filename)[-1]
+    filename = "feed/BFF_%s%s" % (uuid4().hex, ext)
+    return filename
+
+
+class Image(models.Model):
+    image = models.ImageField(upload_to=change_image_name)
+
+    def save(self, *args, **kwargs):
+        if self.image:
+            new_name = change_image_name(self, self.image.name)
+            self.image.name = new_name
+        super(Image, self).save(*args, **kwargs)

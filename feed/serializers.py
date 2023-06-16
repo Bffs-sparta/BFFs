@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from community.models import CommunityAdmin
 from feed.models import Category, Comment, Cocomment, Feed, GroupPurchase, JoinedUser
+from user.models import Profile
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -49,15 +50,25 @@ class CommentSerializer(serializers.ModelSerializer):
         }
 
 
-class FeedListSerializer(serializers.ModelSerializer):
-    """feed list serializer"""
+class FeedTitleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Feed
+        fields = [
+            "category",
+            "title",
+            "view_count",
+        ]
 
-    # user = serializers.SerializerMethodField('get_user_prefetch_related')
+
+class FeedListSerializer(serializers.ModelSerializer):
+    nickname = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
+
     class Meta:
         model = Feed
         fields = [
             "user",
-            # "nickname",
+            "nickname",
             "title",
             "image",
             "view_count",
@@ -65,13 +76,11 @@ class FeedListSerializer(serializers.ModelSerializer):
             "category",
         ]
 
-    # def get_user_prefetch_related(self, obj):
-    #     user_data = obj.user
-    #     datas = []
-    #     for data in user_data:
-    #         data = {'id': user.id, 'nickname':user.nickname}
-    #         datas.append(data)
-    #     return datas
+    def get_nickname(self, obj):
+        return Profile.objects.get(user=obj.user).nickname
+
+    def get_category(self, obj):
+        return Category.objects.get(id=obj.category_id).category_name
 
 
 class FeedCreateSerializer(serializers.ModelSerializer):
@@ -87,7 +96,7 @@ class FeedCreateSerializer(serializers.ModelSerializer):
             "category",
         ]
         extra_kwargs = {
-            "community": {"read_only": True},
+            "category": {"read_only": True},
         }
 
 
