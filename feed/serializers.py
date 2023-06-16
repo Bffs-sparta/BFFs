@@ -9,6 +9,8 @@ from user.models import Profile
 
 
 class CategorySerializer(serializers.ModelSerializer):
+    """카테고리 serializer"""
+
     class Meta:
         model = Category
         fields = [
@@ -17,6 +19,8 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class CocommentSerializer(serializers.ModelSerializer):
+    """대댓글 serializer"""
+
     class Meta:
         model = Cocomment
         fields = [
@@ -31,6 +35,8 @@ class CocommentSerializer(serializers.ModelSerializer):
 
 
 class CommentSerializer(serializers.ModelSerializer):
+    """댓글 serializer"""
+
     class Meta:
         model = Comment
         fields = [
@@ -78,6 +84,8 @@ class FeedListSerializer(serializers.ModelSerializer):
 
 
 class FeedCreateSerializer(serializers.ModelSerializer):
+    """feed 생성 serializer"""
+
     class Meta:
         model = Feed
         fields = [
@@ -93,6 +101,8 @@ class FeedCreateSerializer(serializers.ModelSerializer):
 
 
 class FeedDetailSerializer(serializers.ModelSerializer):
+    """feed 상세 serializer"""
+
     likes_count = serializers.SerializerMethodField()
     likes = serializers.StringRelatedField(many=True)
 
@@ -112,6 +122,8 @@ class FeedDetailSerializer(serializers.ModelSerializer):
 
 
 class FeedNotificationSerializer(serializers.ModelSerializer):
+    """feed 공지 serializer"""
+
     class Meta:
         model = Feed
         fields = [
@@ -119,8 +131,8 @@ class FeedNotificationSerializer(serializers.ModelSerializer):
         ]
 
     # is_admin여부를 확인해 공지글로 바꾸어줄 수 있도록 구현
-    def post_is_notification(self, obj, request):
-        user = get_object_or_404(CommunityAdmin, user=request.user)
+    def post_is_notification(self, obj, community, request):
+        user = CommunityAdmin.objects.filter(user=request.user, community=community)[0]
         if user.is_subadmin != True and user.is_comuadmin != True:
             return Response({"message": "커뮤니티 관리자 권한이 없습니다"})
         else:
@@ -197,15 +209,25 @@ class GroupPurchaseCreateSerializer(serializers.ModelSerializer):
 class JoinedUserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = JoinedUser
-        field = [
+        fields = [
             "product_quantity",
         ]
+        extra_kwargs = {
+            "user": {"read_only": True},
+            "grouppurchase": {"read_only": True},
+            "created_at": {"read_only": True},
+            "is_deleted": {"read_only": True},
+        }
 
 
 class JoinedUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = JoinedUser
-        field = "__all__"
+        fields = "__all__"
+        extra_kwargs = {
+            "user": {"read_only": True},
+            "grouppurchase": {"read_only": True},
+        }
 
 
 class FeedSearchSerializer(serializers.ModelSerializer):

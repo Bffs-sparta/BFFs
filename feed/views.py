@@ -1,7 +1,8 @@
-from rest_framework import filters, permissions, status
+from rest_framework import filters, permissions, status, generics
 from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db import transaction
 from rest_framework.pagination import PageNumberPagination
 from django.core.files.storage import default_storage
 from community.models import Community
@@ -18,13 +19,14 @@ from feed.models import (
 from feed.serializers import (
     CommentSerializer,
     CocommentSerializer,
-    FeedCreateSerializer,
     FeedDetailSerializer,
     FeedListSerializer,
     FeedNotificationSerializer,
     GroupPurchaseCreateSerializer,
-    GroupPurchaseDetailSerializer,
     GroupPurchaseListSerializer,
+    GroupPurchaseDetailSerializer,
+    JoinedUserCreateSerializer,
+    JoinedUserSerializer,
 )
 
 
@@ -272,20 +274,20 @@ class LikeView(APIView):
 
 
 class FeedNotificationView(APIView):
-    def post(self, request, feed_id):
+    def post(self, request, community_name, feed_id):
         feed = Feed.objects.get(id=feed_id)
+        community = Community.objects.get(title=community_name)
         if feed:
             serializer = FeedNotificationSerializer(feed, data=request.data)
-            is_notificated = serializer.post_is_notification(feed, request)
+            is_notificated = serializer.post_is_notification(feed, community, request)
+            serializer.is_valid(raise_exception=True)
             if is_notificated == True:
-                serializer.is_valid(raise_exception=True)
                 serializer.save(is_notification=False)
                 return Response(
                     {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
                     status=status.HTTP_200_OK,
                 )
             else:  # False일 경우
-                serializer.is_valid(raise_exception=True)
                 serializer.save(is_notification=True)
                 return Response(
                     {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
@@ -330,6 +332,8 @@ class GroupPurchaseCreateView(APIView):
 class GroupPurchaseDetailView(APIView):
     """공구 detail get, update, delete"""
 
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
     # 조회수 기능을 위한 모델 세팅
     model = Feed
 
@@ -341,6 +345,7 @@ class GroupPurchaseDetailView(APIView):
         # comment = purchasefeed.comment.all().order_by("created_at")
         # 댓글 유무 여부 확인
         # if not comment:
+        # purchasefeed.click
         #     return Response(
         #         {
         #             "message": "조회수 +1",
@@ -361,13 +366,11 @@ class GroupPurchaseDetailView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    permission_classes = [permissions.IsAuthenticated]
-
     def put(self, request, grouppurchase_id):
         purchasefeed = get_object_or_404(GroupPurchase, id=grouppurchase_id)
         if purchasefeed.user != request.user:
             return Response(
-                {"error": "공구 게시글 작성자만 수정할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN
+                {"error": "공구 게시글 작성자만 수정할 수 있습니다."}, status=status.HTTP_400_BAD_REQUEST
             )
         else:
             serializer = GroupPurchaseCreateSerializer(purchasefeed, data=request.data)
@@ -413,19 +416,67 @@ class GroupPurchaseListView(APIView):
 
 
 class GroupPurchaseJoinedUserView(APIView):
-    """공구 참여 유저 생성 및 취소 view"""
+    """공구 참여 유저 생성, 수정 및 취소 view"""
 
     permission_classes = [permissions.IsAuthenticated]
 
+    @transaction.atomic
     def post(self, request, grouppurchase_id):
+        purchasefeed = get_object_or_404(GroupPurchase, id=grouppurchase_id)
         join_purchase = JoinedUser.objects.filter(
-            joined_user_id=request.user.id, grouppurchase_id=grouppurchase_id
+            user_id=request.user.id, grouppurchase_id=grouppurchase_id
         ).last()
+        if not request.user.profile.region:
+            return Response({"error": "유저 프로필을 업데이트 해주세요! 상세 정보가 없으면 공구를 진행할 수 없습니다."})
+        if purchasefeed.check_end_person_limit_point(grouppurchase_id):
+            return Response(
+                {"message": "공구 인원이 모두 찼습니다!"},
+                status=status.HTTP_405_METHOD_NOT_ALLOWED,
+            )
         if not join_purchase:
-            JoinedUser.objects.create(
-                joined_user_id=request.user.id,
-                grouppurchase_id=grouppurchase_id,
-                data=request.data,
+            serializer = JoinedUserCreateSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(user=request.user, grouppurchase_id=grouppurchase_id)
+            # save한 후 join인원 체크 및 마감여부 확인
+            if purchasefeed.check_end_person_limit_point(grouppurchase_id):
+                print("⭐️공구 마감⭐️")
+            return Response(
+                {
+                    "message": "공구를 신청했습니다.",
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        # True
+        quantity = request.data.__getitem__("product_quantity")
+        joined_user = JoinedUser.objects.get(
+            user_id=request.user.id, grouppurchase_id=grouppurchase_id
+        )
+        serializer = JoinedUserSerializer(joined_user, data=request.data)
+        if quantity < 0 or quantity == joined_user.product_quantity:
+            return Response(
+                {"error": "수량을 다시 확인해주세요"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        # 수량 제한을 만들경우 필요함
+        # if quantity > 남은수량:
+        #     return Response({"error":"신청 수량이 남은 수량보다 많습니다."}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        serializer.is_valid(raise_exception=True)
+        if joined_user.is_deleted is True:
+            serializer.save(is_deleted=False)
+            return Response(
+                {"message": "공구를 재 신청했습니다.", "data": serializer.data},
+                status=status.HTTP_202_ACCEPTED,
+            )
+        if quantity == 0:
+            serializer.save(is_deleted=True)
+            return Response(
+                {"message": "공구 신청을 취소했습니다.", "data": serializer.data},
+                status=status.HTTP_202_ACCEPTED,
+            )
+        if quantity != joined_user.product_quantity:
+            serializer.save()
+            return Response(
+                {"message": "공구 수량을 수정했습니다.", "data": serializer.data},
+                status=status.HTTP_202_ACCEPTED,
             )
         else:  # True
             # is_deleted가 True / False인지 확인하여 적절한 조치 취해주기

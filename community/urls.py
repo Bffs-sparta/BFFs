@@ -1,11 +1,13 @@
 from django.urls import path
 from .views import (
     CommunityView,
+    CommunityDetailView,
     CommunitySubAdminView,
     CommunityForbiddenView,
     CommunityBookmarkView,
     SearchCommunityView,
     SearchUserView,
+    CommunityCategoryView,
 )
 from feed.views import (
     FeedListView,
@@ -22,8 +24,13 @@ urlpatterns = [
     path("", CommunityView.as_view(), name="community_view"),
     path(
         "<str:community_name>/",
-        CommunityView.as_view(),
+        CommunityDetailView.as_view(),
         name="community_detail_view",
+    ),
+    path(
+        "<str:community_name>/category/",
+        CommunityCategoryView.as_view(),
+        name="community_category_view",
     ),
     path(
         "<str:community_name>/subadmin/",
@@ -36,12 +43,17 @@ urlpatterns = [
         name="community_forbidden_view",
     ),
     path(
+        "<str:community_name>/forbidden/<str:forbidden_word>/",
+        CommunityForbiddenView.as_view(),
+        name="community_forbidden_view",
+    ),
+    path(
         "<str:community_name>/bookmark/",
         CommunityBookmarkView.as_view(),
         name="community_bookmark_view",
     ),
-    path("search/", SearchCommunityView.as_view(), name="search_community_view"),
-    path("searchuser/", SearchUserView.as_view(), name="search_user_view"),
+    path("search", SearchCommunityView.as_view(), name="search_community_view"),
+    path("searchuser", SearchUserView.as_view(), name="search_user_view"),
     # feed 전체 list get
     path(
         "<str:community_name>/list/",

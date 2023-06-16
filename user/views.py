@@ -36,6 +36,7 @@ from .jwt_tokenserializer import CustomTokenObtainPairSerializer
 from .tasks import verifymail, pwresetMail
 
 
+
 class SendEmailView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -134,6 +135,7 @@ class NaverCallbackView(APIView):
         user_data = user_response_json.get("response")
         email = user_data.get("email")
         name = user_data.get("name")
+        profileimage = user_data.get("profile_image_url")
         social = "naver"
         return socialLogin(name=name, email=email, login_type=social)
 
@@ -224,7 +226,6 @@ def get_token(user):
     callback_url = f"{config('FRONTEND_URL')}/callback?access_token={token.get('access')}&refresh_token={token.get('refresh')}"
     return redirect(callback_url)
 
-
 # 프로필 ru
 
 
@@ -270,9 +271,7 @@ class ProfileView(APIView):
     def delete(self, request, user_id):
         profile = User.objects.get(id=user_id)
         datas = request.data.copy()
-
-        datas["is_withdraw"] = False
-
+        datas["is_withdraw"] = True
         serializer = UserDelSerializer(profile, data=datas)
         if profile.check_password(request.data.get("password")):
             if serializer.is_valid():
@@ -323,7 +322,6 @@ class GuestBookDetailView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
-
 
 class MyPasswordResetView(APIView):
     def post(self, request):
