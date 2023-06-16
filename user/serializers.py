@@ -106,7 +106,6 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         return user
 
 
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -133,6 +132,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "region",
             "introduction",
             "profileimage",
+            "created_at",
         )
 
     def get_user_name(self, obj):
@@ -184,8 +184,6 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         return user
 
 
-
-
 class UserDelSerializer(serializers.ModelSerializer):
     user_password = serializers.SerializerMethodField()
 
@@ -194,17 +192,13 @@ class UserDelSerializer(serializers.ModelSerializer):
 
         fields = ("is_withdraw", "user_password")
 
-
     def get_user_password(self, obj):
         return obj.user.password
-
 
     def withdraw(self):
         self.is_withdraw = True
         self.withdraw_at = timezone.now()
         self.save()
-
-
 
 
 class GuestBookSerializer(serializers.ModelSerializer):

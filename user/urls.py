@@ -11,7 +11,6 @@ from .views import (
     GuestBookView,
     GuestBookDetailView,
     MyPasswordResetView,
-    MyPasswordResetDoneView,
     MyPasswordResetConfirmView,
     MyPasswordResetCompleteView,
     NaverLoginView,
@@ -40,11 +39,6 @@ urlpatterns = [
         name="guestbook_detail_view",
     ),
     path("password/reset/", MyPasswordResetView.as_view(), name="password_reset"),
-    path(
-        "password/reset/done/",
-        MyPasswordResetDoneView.as_view(),
-        name="password_reset_done",
-    ),
     path(
         "password/reset/confirm/<uidb64>/<token>/",
         MyPasswordResetConfirmView.as_view(),

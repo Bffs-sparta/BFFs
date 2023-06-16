@@ -3,9 +3,18 @@ from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.pagination import PageNumberPagination
-
+from django.core.files.storage import default_storage
 from community.models import Community
-from feed.models import Comment, Cocomment, Feed, GroupPurchase, JoinedUser, Category
+from decouple import config
+from feed.models import (
+    Comment,
+    Cocomment,
+    Feed,
+    GroupPurchase,
+    JoinedUser,
+    Category,
+    Image,
+)
 from feed.serializers import (
     CommentSerializer,
     CocommentSerializer,
@@ -111,6 +120,14 @@ class CocommentView(APIView):
             return Response({"message": "대댓글을 삭제했습니다."}, status=status.HTTP_200_OK)
 
 
+class FeedAllView(APIView):
+    # feed 전체 리스트 view
+    def get(self, request):
+        feeds = Feed.objects.all().order_by("-created_at")[:3]
+        serializer = FeedListSerializer(feeds, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class FeedListView(APIView):
     pagination_class = CustomPagination()
 
@@ -166,9 +183,9 @@ class FeedDetailView(APIView):
     model = Feed
 
     # feed 상세 및 comment,cocomment 함께 가져오기
-    def get(self, request, community_name, feed_id):
+    def get(self, request, feed_id):
         feed = get_object_or_404(Feed, id=feed_id)
-        community = Community.objects.get(title=community_name)
+        # community = Community.objects.get(title=community_name)
         serializer = FeedDetailSerializer(feed)
         comment = feed.comment.all().order_by("created_at")
         # 댓글 유무 여부 확인
@@ -230,9 +247,9 @@ class FeedCreateView(APIView):
     # feed 생성 view
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, category_name):  # testcomu
+    def post(self, request, category_id):  # testcomu
         serializer = FeedCreateSerializer(data=request.data)
-        category = get_object_or_404(Category, category_name=category_name)
+        category = get_object_or_404(Category, id=category_id)
         if serializer.is_valid():
             serializer.save(user=request.user, category=category)
             return Response({"message": "게시글이 작성되었습니다"}, status=status.HTTP_201_CREATED)
@@ -424,3 +441,20 @@ class GroupPurchaseEndPointView(APIView):
     """공구 종료 조건 view"""
 
     pass
+
+
+class ImageUploadAndDeleteView(APIView):
+    def post(self, request):
+        image = request.FILES.get("image")
+        if image:
+            image = Image.objects.create(image=image)
+            imageurl = config("BACKEND_URL") + image.image.url
+            image.delete()
+            return Response(
+                {"message": "이미지 업로드 성공", "image_url": imageurl},
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response(
+                {"message": "이미지 업로드 실패"}, status=status.HTTP_400_BAD_REQUEST
+            )
