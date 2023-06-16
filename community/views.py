@@ -1,13 +1,17 @@
+from django.db.models import Q
+
 from rest_framework import permissions, status, filters
 from rest_framework.generics import ListAPIView, get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from user.models import User
+from user.serializers import UserSerializer
 from feed.models import Category
 from .models import Community, CommunityAdmin, ForbiddenWord
 from .serializers import (
     CommunitySerializer,
+    CommunityCategorySerializer,
     CommunityCreateSerializer,
     CommunityUpdateSerializer,
     CommunityAdminCreateSerializer,
@@ -41,6 +45,24 @@ class CommunityView(APIView):
             status=status.HTTP_202_ACCEPTED,
         )
 
+
+class CommunityDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request, community_name):
+        """커뮤니티 관리자 페이지에서 조회 및 북마크, 어드민 조회"""
+        community = get_object_or_404(Community, title=community_name)
+        community_admin = community.comu.get(is_comuadmin=True).user
+        if community_admin == request.user:
+            communities = Community.objects.get(title=community_name)
+            serializer = CommunitySerializer(communities)
+            return Response(
+                {"data": serializer.data, "msg": "조회가 완료되었습니다."},
+                status=status.HTTP_200_OK,
+            )
+        else:
+            return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
     def put(self, request, community_name):
         """커뮤니티 수정"""
         community = get_object_or_404(Community, title=community_name)
@@ -67,13 +89,44 @@ class CommunityView(APIView):
             return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class CommunitySubAdminView(APIView):
+class CommunityCategoryView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, community_name):
+        """게시글 작성 페이지에서 커뮤니티 카테고리 조회"""
+        community = get_object_or_404(Community, title=community_name)
+        serializer = CommunityCategorySerializer(community)
+        return Response(
+            {"data": serializer.data, "msg": "조회가 완료되었습니다."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class CommunitySubAdminView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get(self, request, community_name):
+        """어드민 등록을 위한 현재 커뮤니티의 유저를 제외한 전체 유저 조회"""
+        community = get_object_or_404(Community, title=community_name)
+        try:
+            exist_users = community.comu.filter(
+                Q(is_comuadmin=True) | Q(is_subadmin=True)
+            )
+            user_ids = exist_users.values_list("user_id", flat=True)
+            try:
+                excluded_users = User.objects.all().exclude(id__in=user_ids)
+                serializer = UserSerializer(excluded_users, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+        except CommunityAdmin.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
     def post(self, request, community_name):
         """서브 어드민 등록"""
         community = get_object_or_404(Community, title=community_name)
         community_admin = community.comu.get(is_comuadmin=True).user
+
         if community_admin == request.user:
             if community.comu.filter(user_id=request.data["user"]).exists():
                 return Response(
@@ -144,6 +197,17 @@ class CommunityForbiddenView(APIView):
         else:
             return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
+    def delete(self, request, community_name, forbidden_word):
+        """커뮤니티 금지어 삭제"""
+        community = get_object_or_404(Community, title=community_name)
+        community_admin = community.comu.get(is_comuadmin=True).user
+        if community_admin == request.user:
+            word = ForbiddenWord.objects.get(word=forbidden_word)
+            word.delete()
+            return Response({"msg": "금지어 삭제가 완료되었습니다."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 class CommunityBookmarkView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -174,4 +238,4 @@ class SearchUserView(ListAPIView):
     queryset = User.objects.all()
     serializer_class = SearchUserSerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ["email"]
+    search_fields = ["name"]
