@@ -27,8 +27,11 @@ from decouple import config
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
+    nickname = serializers.CharField()
+    region = serializers.CharField()
+
     class Meta:
-        fields = ("email", "name", "password")
+        fields = ("email", "name", "password", "nickname", "region")
         extra_kwargs = {"password": {"write_only": True}}
         model = User
 
@@ -130,11 +133,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
     profileimageurl = serializers.SerializerMethodField()
     user_name = serializers.SerializerMethodField()
     user_email = serializers.SerializerMethodField()
+    bookmark_count = serializers.SerializerMethodField()
     # 이메일,
 
     class Meta:
         model = Profile
         fields = (
+            "id",
             "user_email",
             "user_name",
             "nickname",
@@ -143,6 +148,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "profileimage",
             "profileimageurl",
             "created_at",
+            "bookmark_count",
         )
 
     def get_profileimageurl(self, obj):
@@ -153,6 +159,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_user_email(self, obj):
         return obj.user.email
+
+    def get_bookmark_count(self, obj):
+        return obj.comment_set.count()
 
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):

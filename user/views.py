@@ -200,7 +200,13 @@ class KakaoCallbackView(APIView):
 
         profile_image = profile.get("profile_image_url")
         age_range = kakao_account.get("age_range")
-        return socialLogin(name=name, email=email, login_type=social)
+        return socialLogin(
+            name=name,
+            email=email,
+            login_type=social,
+            nickname=name,
+            profileimage=profile_image,
+        )
 
 
 def socialLogin(**kwargs):
@@ -222,6 +228,7 @@ def socialLogin(**kwargs):
 
 def get_token(user):
     token = CustomTokenObtainPairSerializer.social_token(user)
+    print(token)
     callback_url = f"{config('FRONTEND_URL')}/callback?access_token={token.get('access')}&refresh_token={token.get('refresh')}"
     return redirect(callback_url)
 
@@ -229,8 +236,15 @@ def get_token(user):
 # 프로필 ru
 
 
-# 프로필 id 받아오는 거로 수정할 예정!!!!!!!!!!!!!!!!!!
 class ProfileView(APIView):
+    def get(self, request):
+        profile = Profile.objects.all()
+        profile_serializer = UserProfileSerializer(profile, many=True)
+        return Response(profile_serializer.data, status=status.HTTP_200_OK)
+
+
+# 프로필 id 받아오는 거로 수정할 예정!!!!!!!!!!!!!!!!!!
+class ProfileDetailView(APIView):
     def get(self, request, user_id):
         profile = Profile.objects.get(user_id=user_id)
         profile_serializer = UserProfileSerializer(profile)

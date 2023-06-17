@@ -18,6 +18,7 @@ from feed.models import (
     Image,
 )
 from feed.serializers import (
+    CommentCreateSerializer,
     CommentSerializer,
     CocommentSerializer,
     FeedCreateSerializer,
@@ -43,8 +44,9 @@ class CommentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, feed_id):
-        serializer = CommentSerializer(data=request.data)
+        serializer = CommentCreateSerializer(data=request.data)
         if serializer.is_valid():
+            print(request.user)
             serializer.save(user=request.user, feed_id=feed_id)
             return Response({"message": "댓글을 작성했습니다."}, status=status.HTTP_201_CREATED)
         else:
@@ -57,7 +59,7 @@ class CommentView(APIView):
                 {"error": "댓글 작성자만 수정할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN
             )
         else:
-            serializer = CommentSerializer(comment, data=request.data)
+            serializer = CommentCreateSerializer(comment, data=request.data)
             if serializer.is_valid():
                 serializer.save()
                 return Response({"message": "댓글을 수정했습니다."}, status=status.HTTP_200_OK)
@@ -193,8 +195,7 @@ class FeedDetailView(APIView):
         feed = get_object_or_404(Feed, id=feed_id)
 
         serializer = FeedDetailSerializer(feed)
-        community = Category.objects.get(id=feed.category_id)
-        community_title = community.community.title
+        community = Category.objects.get(id=feed.category_id).community.title
         admin = Category.objects.get(id=feed.category_id).community.comu
         admin_serializer = CommunityAdminSerializer(admin, many=True)
         comment = feed.comment.all().order_by("created_at")
@@ -204,7 +205,7 @@ class FeedDetailView(APIView):
             return Response(
                 {
                     "message": "조회수 +1",
-                    "community": community_title,
+                    "community": community,
                     "feed": serializer.data,
                     "admin": admin_serializer.data,
                     "comment": "아직 댓글이 없습니다",

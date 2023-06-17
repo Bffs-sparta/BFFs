@@ -1,6 +1,8 @@
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.response import Response
 
+from community.models import CommunityAdmin
 from feed.models import Category, Comment, Cocomment, Feed, GroupPurchase, JoinedUser
 from user.models import Profile
 
@@ -21,8 +23,7 @@ class CocommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cocomment
         fields = [
-            "id",
-            "user",
+            "id" "user",
             "text",
             "created_at",
             "updated_at",
@@ -33,6 +34,14 @@ class CocommentSerializer(serializers.ModelSerializer):
             "created_at": {"read_only": True},
             "updated_at": {"read_only": True},
         }
+
+
+class CommentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = [
+            "text",
+        ]
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -62,6 +71,8 @@ class CommentSerializer(serializers.ModelSerializer):
         return Profile.objects.get(user=obj.user).id
 
     def get_nickname(self, obj):
+        print(Profile.objects.get(user=obj.user).nickname)
+        print(obj.user)
         return Profile.objects.get(user=obj.user).nickname
 
 
@@ -171,7 +182,7 @@ class FeedNotificationSerializer(serializers.ModelSerializer):
     def post_is_notification(self, obj, community, request):
         if obj.is_notification == False:
             return False
-        else:
+        elif obj.is_notification == True:
             return True
 
 

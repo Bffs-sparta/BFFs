@@ -8,6 +8,7 @@ from .views import (
     SendEmailView,
     VerificationEmailView,
     ProfileView,
+    ProfileDetailView,
     GuestBookView,
     GuestBookDetailView,
     MyPasswordResetView,
@@ -28,7 +29,8 @@ urlpatterns = [
     path("kakao/callback/", KakaoCallbackView.as_view(), name="kakao_login"),
     path("email/", SendEmailView.as_view(), name="email"),
     path("email/verify/", VerificationEmailView.as_view(), name="verify"),
-    path("<int:user_id>/", ProfileView.as_view(), name="profile_view"),
+    path("profile/", ProfileView.as_view(), name="profile_view"),
+    path("<int:user_id>/", ProfileDetailView.as_view(), name="profile_detail_view"),
     path(
         "<int:profile_id>/guestbook/",
         GuestBookView.as_view(),
