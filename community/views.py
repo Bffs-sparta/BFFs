@@ -16,7 +16,6 @@ from .serializers import (
     CommunityUpdateSerializer,
     CommunityAdminCreateSerializer,
     ForbiddenWordSerializer,
-    SearchUserSerializer,
 )
 
 
@@ -230,12 +229,3 @@ class SearchCommunityView(ListAPIView):
     serializer_class = CommunityCreateSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ["title"]
-
-
-class SearchUserView(ListAPIView):
-    """유저 조회 및 검색"""
-
-    queryset = User.objects.all()
-    serializer_class = SearchUserSerializer
-    filter_backends = [filters.SearchFilter]
-    search_fields = ["name"]

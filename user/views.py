@@ -7,16 +7,15 @@ from django.contrib.auth.views import (
 )
 from django.shortcuts import redirect
 from django.utils.crypto import get_random_string
-from rest_framework.generics import get_object_or_404
+from rest_framework.generics import ListAPIView, get_object_or_404
 from django.urls import reverse
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth.views import PasswordResetConfirmView
-from rest_framework import permissions, status
+from rest_framework import permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User, Profile, GuestBook, Verify
@@ -27,6 +26,7 @@ from .serializers import (
     UserProfileUpdateSerializer,
     GuestBookSerializer,
     GuestBookCreateSerializer,
+    SearchUserSerializer,
 )
 from feed.serializers import FeedDetailSerializer
 from community.models import CommunityAdmin
@@ -34,7 +34,6 @@ from community.serializers import CommunityCreateSerializer, MyCommunitySerializ
 from .validators import email_validator
 from .jwt_tokenserializer import CustomTokenObtainPairSerializer
 from .tasks import verifymail, pwresetMail
-
 
 
 class SendEmailView(APIView):
@@ -226,6 +225,7 @@ def get_token(user):
     callback_url = f"{config('FRONTEND_URL')}/callback?access_token={token.get('access')}&refresh_token={token.get('refresh')}"
     return redirect(callback_url)
 
+
 # 프로필 ru
 
 
@@ -323,6 +323,7 @@ class GuestBookDetailView(APIView):
         else:
             return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
 
+
 class MyPasswordResetView(APIView):
     def post(self, request):
         email = request.data.get("email")
@@ -345,3 +346,12 @@ class MyPasswordResetConfirmView(PasswordResetConfirmView):
 class MyPasswordResetCompleteView(PasswordResetCompleteView):
     template_name = "password_reset_complete.html"
     title = "비밀번호 초기화 완료"
+
+
+class SearchUserView(ListAPIView):
+    """유저 조회 및 검색"""
+
+    queryset = User.objects.all()
+    serializer_class = SearchUserSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["name"]

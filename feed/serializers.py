@@ -1,6 +1,5 @@
 from django.utils import timezone
 from rest_framework import serializers
-from rest_framework.generics import get_object_or_404
 
 from feed.models import Category, Comment, Cocomment, Feed, GroupPurchase, JoinedUser
 from user.models import Profile
@@ -22,7 +21,11 @@ class CocommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Cocomment
         fields = [
+            "id",
+            "user",
             "text",
+            "created_at",
+            "updated_at",
         ]
         extra_kwargs = {
             "id": {"read_only": True},
@@ -35,10 +38,18 @@ class CocommentSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     """댓글 serializer"""
 
+    user_id = serializers.SerializerMethodField()
+    nickname = serializers.SerializerMethodField()
+
     class Meta:
         model = Comment
         fields = [
+            "id",
+            "user_id",
+            "nickname",
             "text",
+            "created_at",
+            "updated_at",
         ]
         extra_kwargs = {
             "id": {"read_only": True},
@@ -46,6 +57,12 @@ class CommentSerializer(serializers.ModelSerializer):
             "created_at": {"read_only": True},
             "updated_at": {"read_only": True},
         }
+
+    def get_user_id(self, obj):
+        return Profile.objects.get(user=obj.user).id
+
+    def get_nickname(self, obj):
+        return Profile.objects.get(user=obj.user).nickname
 
 
 class FeedTitleSerializer(serializers.ModelSerializer):
@@ -61,12 +78,11 @@ class FeedTitleSerializer(serializers.ModelSerializer):
 class FeedListSerializer(serializers.ModelSerializer):
     nickname = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
-    comments_count = serializers.SerializerMethodField()
-    likes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Feed
         fields = [
+            "id",
             "user",
             "nickname",
             "title",
@@ -74,8 +90,6 @@ class FeedListSerializer(serializers.ModelSerializer):
             "view_count",
             "created_at",
             "category",
-            "comments_count",
-            "likes_count",
         ]
 
     def get_nickname(self, obj):
@@ -83,14 +97,6 @@ class FeedListSerializer(serializers.ModelSerializer):
 
     def get_category(self, obj):
         return Category.objects.get(id=obj.category_id).category_name
-
-    def get_comments_count(self, obj):
-        comment = obj.comment.count()
-        cocomment = obj.comment.prefetch_related("cocomment").count()
-        return comment + cocomment
-
-    def get_likes_count(self, obj):
-        return obj.likes.count()
 
 
 class FeedCreateSerializer(serializers.ModelSerializer):
@@ -115,6 +121,8 @@ class FeedDetailSerializer(serializers.ModelSerializer):
 
     likes_count = serializers.SerializerMethodField()
     likes = serializers.StringRelatedField(many=True)
+    nickname = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
 
     class Meta:
         model = Feed
@@ -122,6 +130,7 @@ class FeedDetailSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "id": {"read_only": True},
             "user": {"read_only": True},
+            "nickname": {"read_only": True},
             "created_at": {"read_only": True},
             "updated_at": {"read_only": True},
             "likes": {"read_only": True},
@@ -129,6 +138,12 @@ class FeedDetailSerializer(serializers.ModelSerializer):
 
     def get_likes_count(self, obj):
         return obj.likes.count()
+
+    def get_nickname(self, obj):
+        return Profile.objects.get(user=obj.user).nickname
+
+    def get_category(self, obj):
+        return Category.objects.get(id=obj.category_id).category_name
 
 
 class FeedNotificationSerializer(serializers.ModelSerializer):

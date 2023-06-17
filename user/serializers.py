@@ -1,7 +1,6 @@
 from rest_framework import serializers
-from .models import User, Profile, GuestBook, Verify
+from .models import User, Profile, GuestBook
 
-from rest_framework.generics import get_object_or_404
 from user.validators import (
     nickname_validator,
 )
@@ -9,9 +8,7 @@ from django.utils import timezone
 from django.core.files.storage import default_storage
 from uuid import uuid4
 import os
-
-from .models import User, Profile, GuestBook, Verify
-from user.validators import nickname_validator
+from decouple import config
 
 
 # class UserCreateSerializer(serializers.ModelSerializer):
@@ -130,6 +127,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    profileimageurl = serializers.SerializerMethodField()
     user_name = serializers.SerializerMethodField()
     user_email = serializers.SerializerMethodField()
     # 이메일,
@@ -143,8 +141,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "region",
             "introduction",
             "profileimage",
+            "profileimageurl",
             "created_at",
         )
+
+    def get_profileimageurl(self, obj):
+        return config("BACKEND_URL") + "/media/" + str(obj.profileimage)
 
     def get_user_name(self, obj):
         return obj.user.name
@@ -242,3 +244,18 @@ class GuestBookCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = GuestBook
         fields = ("comment",)
+
+
+class SearchUserSerializer(serializers.ModelSerializer):
+    name = serializers.StringRelatedField(source="user.name")
+    nickname = serializers.StringRelatedField(source="user.nickname")
+    last_login = serializers.StringRelatedField(source="user.last_login")
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "name",
+            "nickname",
+            "last_login",
+        ]

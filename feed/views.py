@@ -1,11 +1,11 @@
-from rest_framework import filters, permissions, status, generics
+from rest_framework import filters, permissions, status
 from rest_framework.generics import get_object_or_404, ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db import transaction
 from rest_framework.pagination import PageNumberPagination
-from django.core.files.storage import default_storage
 from community.models import Community, CommunityAdmin
+from community.serializers import CommunityAdminSerializer
 from decouple import config
 from feed.models import (
     Comment,
@@ -19,9 +19,9 @@ from feed.models import (
 from feed.serializers import (
     CommentSerializer,
     CocommentSerializer,
+    FeedCreateSerializer,
     FeedDetailSerializer,
     FeedListSerializer,
-    FeedCreateSerializer,
     FeedNotificationSerializer,
     GroupPurchaseCreateSerializer,
     GroupPurchaseListSerializer,
@@ -190,6 +190,10 @@ class FeedDetailView(APIView):
         feed = get_object_or_404(Feed, id=feed_id)
         # community = Community.objects.get(title=community_name)
         serializer = FeedDetailSerializer(feed)
+        community = Category.objects.get(id=feed.category_id)
+        community_title = community.community.title
+        admin = Category.objects.get(id=feed.category_id).community.comu
+        admin_serializer = CommunityAdminSerializer(admin, many=True)
         comment = feed.comment.all().order_by("created_at")
         # 댓글 유무 여부 확인
         if not comment:
@@ -197,7 +201,9 @@ class FeedDetailView(APIView):
             return Response(
                 {
                     "message": "조회수 +1",
+                    "community": community_title,
                     "feed": serializer.data,
+                    "admin": admin_serializer.data,
                     "comment": "아직 댓글이 없습니다",
                 },
                 status=status.HTTP_200_OK,
@@ -209,7 +215,9 @@ class FeedDetailView(APIView):
             return Response(
                 {
                     "message": "조회수 +1",
+                    "community": community,
                     "feed": serializer.data,
+                    "admin": admin_serializer.data,
                     "comment": comment_serializer.data,
                 },
                 status=status.HTTP_200_OK,

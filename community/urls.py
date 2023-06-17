@@ -6,7 +6,6 @@ from .views import (
     CommunityForbiddenView,
     CommunityBookmarkView,
     SearchCommunityView,
-    SearchUserView,
     CommunityCategoryView,
 )
 from feed.views import (
@@ -53,7 +52,6 @@ urlpatterns = [
         name="community_bookmark_view",
     ),
     path("search", SearchCommunityView.as_view(), name="search_community_view"),
-    path("searchuser", SearchUserView.as_view(), name="search_user_view"),
     # feed 전체 list get
     path(
         "<str:community_name>/list/",

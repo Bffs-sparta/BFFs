@@ -17,6 +17,7 @@ from .views import (
     NaverCallbackView,
     GoogleLoginView,
     GoogleCallbackView,
+    SearchUserView,
 )
 
 urlpatterns = [
@@ -53,4 +54,5 @@ urlpatterns = [
     path("naver/callback/", NaverCallbackView.as_view(), name="naver_callback"),
     path("google/login/", GoogleLoginView.as_view(), name="google_login"),
     path("google/callback/", GoogleCallbackView.as_view(), name="google_callback"),
+    path("search", SearchUserView.as_view(), name="search_user_view"),
 ]
