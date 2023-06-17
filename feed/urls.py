@@ -60,10 +60,4 @@ urlpatterns = [
         name="grouppurchase_put_delete_view",
     ),
     path("image/upload/", ImageUploadAndDeleteView.as_view(), name="image_upload_view"),
-    # grouppurchase 참여 / 취소
-    path(
-        "<int:grouppurchase_id>/join/",
-        GroupPurchaseJoinedUserView.as_view(),
-        name="grouppurchase_join_view",
-    ),
 ]

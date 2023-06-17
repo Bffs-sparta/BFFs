@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from django.db import transaction
 from rest_framework.pagination import PageNumberPagination
 from django.core.files.storage import default_storage
-from community.models import Community
+from community.models import Community, CommunityAdmin
 from decouple import config
 from feed.models import (
     Comment,
@@ -21,6 +21,7 @@ from feed.serializers import (
     CocommentSerializer,
     FeedDetailSerializer,
     FeedListSerializer,
+    FeedCreateSerializer,
     FeedNotificationSerializer,
     GroupPurchaseCreateSerializer,
     GroupPurchaseListSerializer,
@@ -274,28 +275,39 @@ class LikeView(APIView):
 
 
 class FeedNotificationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
     def post(self, request, community_name, feed_id):
-        feed = Feed.objects.get(id=feed_id)
+        feed = get_object_or_404(Feed, id=feed_id)
         community = Community.objects.get(title=community_name)
-        if feed:
-            serializer = FeedNotificationSerializer(feed, data=request.data)
-            is_notificated = serializer.post_is_notification(feed, community, request)
-            serializer.is_valid(raise_exception=True)
-            if is_notificated == True:
-                serializer.save(is_notification=False)
-                return Response(
-                    {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
-                    status=status.HTTP_200_OK,
-                )
-            else:  # False일 경우
-                serializer.save(is_notification=True)
-                return Response(
-                    {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
-                    status=status.HTTP_200_OK,
-                )
-        else:
+
+        # 유저가 admin인지 확인
+        user = CommunityAdmin.objects.filter(
+            user=request.user, community=community
+        ).last()
+        if not user:
             return Response(
-                {"error": "유효하지 않은 요청입니다"}, status=status.HTTP_400_BAD_REQUEST
+                {"message": "커뮤니티 관리자 권한이 없습니다"}, status=status.HTTP_403_FORBIDDEN
+            )
+        if user.is_subadmin != True and user.is_comuadmin != True:
+            return Response(
+                {"message": "커뮤니티 관리자 권한이 없습니다"}, status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = FeedNotificationSerializer(feed, data=request.data)
+        is_notificated = serializer.post_is_notification(feed, community, request)
+        serializer.is_valid(raise_exception=True)
+        if is_notificated == True:
+            serializer.save(is_notification=False)
+            return Response(
+                {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
+                status=status.HTTP_200_OK,
+            )
+        else:  # False일 경우
+            serializer.save(is_notification=True)
+            return Response(
+                {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
+                status=status.HTTP_200_OK,
             )
 
 

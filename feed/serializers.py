@@ -1,9 +1,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.generics import get_object_or_404
-from rest_framework.response import Response
 
-from community.models import CommunityAdmin
 from feed.models import Category, Comment, Cocomment, Feed, GroupPurchase, JoinedUser
 from user.models import Profile
 
@@ -63,6 +61,8 @@ class FeedTitleSerializer(serializers.ModelSerializer):
 class FeedListSerializer(serializers.ModelSerializer):
     nickname = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
+    likes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Feed
@@ -74,6 +74,8 @@ class FeedListSerializer(serializers.ModelSerializer):
             "view_count",
             "created_at",
             "category",
+            "comments_count",
+            "likes_count",
         ]
 
     def get_nickname(self, obj):
@@ -81,6 +83,14 @@ class FeedListSerializer(serializers.ModelSerializer):
 
     def get_category(self, obj):
         return Category.objects.get(id=obj.category_id).category_name
+
+    def get_comments_count(self, obj):
+        comment = obj.comment.count()
+        cocomment = obj.comment.prefetch_related("cocomment").count()
+        return comment + cocomment
+
+    def get_likes_count(self, obj):
+        return obj.likes.count()
 
 
 class FeedCreateSerializer(serializers.ModelSerializer):
@@ -132,16 +142,10 @@ class FeedNotificationSerializer(serializers.ModelSerializer):
 
     # is_admin여부를 확인해 공지글로 바꾸어줄 수 있도록 구현
     def post_is_notification(self, obj, community, request):
-        user = CommunityAdmin.objects.filter(user=request.user, community=community)[0]
-        if user.is_subadmin != True and user.is_comuadmin != True:
-            return Response({"message": "커뮤니티 관리자 권한이 없습니다"})
+        if obj.is_notification == False:
+            return False
         else:
-            if (user.is_subadmin or user.is_comuadmin) and obj.is_notification == False:
-                return False
-            elif (
-                user.is_subadmin or user.is_comuadmin
-            ) and obj.is_notification == True:
-                return True
+            return True
 
 
 class GroupPurchaseListSerializer(serializers.ModelSerializer):

@@ -105,9 +105,11 @@ class FeedDetailViewTest(APITestCase):
             "feed_detail_view", kwargs={"community_name": "title1", "feed_id": 1}
         )
         cls.path2 = reverse("feed_detail_view", kwargs={"feed_id": 1})
-        cls.path3 = reverse("feed_create_view", kwargs={"category_name": "얘기해요"})
+        cls.path3 = reverse("feed_create_view", kwargs={"category_id": 1})
         cls.path4 = reverse("like_view", kwargs={"feed_id": 1})
-        cls.path5 = reverse("feed_notification_view", kwargs={"feed_id": 1})
+        cls.path5 = reverse(
+            "feed_notification_view", kwargs={"community_name": "title1", "feed_id": 1}
+        )
 
     def setUp(self):
         self.access_token = self.client.post(reverse("login"), self.user_data).data.get(
@@ -237,7 +239,7 @@ class FeedDetailViewTest(APITestCase):
     def test_post_feed_detail_no_category(self):
         """category 없을 때 피드 생성 실패"""
         response = self.client.post(
-            path=reverse("feed_create_view", kwargs={"category_name": "모집해요"}),
+            path=reverse("feed_create_view", kwargs={"category_name": 3}),
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 404)
@@ -291,10 +293,13 @@ class FeedDetailViewTest(APITestCase):
         )
         self.assertEqual(response.status_code, 401)
 
-    def test_post_feed_notification_no_category(self):
+    def test_post_feed_notification_no_feed(self):
         """feed 없을 때 공지 실패"""
         response = self.client.post(
-            path=reverse("like_view", kwargs={"feed_id": 2}),
+            path=reverse(
+                "feed_notification_view",
+                kwargs={"community_name": "title1", "feed_id": 10},
+            ),
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 404)
@@ -305,8 +310,7 @@ class FeedDetailViewTest(APITestCase):
             path=self.path5,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token3}",
         )
-        print(response.data)
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 403)
 
     def test_post_feed_notification_success1(self):
         """관리자일 때 공지 성공"""
@@ -314,6 +318,7 @@ class FeedDetailViewTest(APITestCase):
             path=self.path5,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
+        self.assertEqual(response.data["data"]["is_notification"], True)
         self.assertEqual(response.status_code, 200)
 
     def test_post_feed_notification_success2(self):
@@ -322,26 +327,46 @@ class FeedDetailViewTest(APITestCase):
             path=self.path5,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
         )
+        self.assertEqual(response.data["data"]["is_notification"], True)
         self.assertEqual(response.status_code, 200)
 
     def test_post_feed_notification_success3(self):
-        """이미 공지글일 때 & 관리자일 때 공지 성공"""
-        Feed.objects.get(id=1).is_notification == True
+        """관리자일 때 공지글 설정 및 취소"""
+        Feed.objects.get(id=1)
 
         response = self.client.post(
             path=self.path5,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
+        self.assertEqual(response.data["data"]["is_notification"], True)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.post(
+            path=self.path5,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+
+        self.assertEqual(response.data["data"]["is_notification"], False)
         self.assertEqual(response.status_code, 200)
 
     def test_post_feed_notification_success4(self):
-        """이미 공지글일 때 & 서브관리자일 때 공지 성공"""
-        Feed.objects.get(id=1).is_notification == True
+        """이미 공지글일 때 & 서브관리자일 때 공지 취소 성공"""
+        Feed.objects.get(id=1)
 
         response = self.client.post(
             path=self.path5,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
         )
+        print(response.data)
+        self.assertEqual(response.data["data"]["is_notification"], True)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.post(
+            path=self.path5,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+        )
+        print(response.data)
+        self.assertEqual(response.data["data"]["is_notification"], False)
         self.assertEqual(response.status_code, 200)
 
 
