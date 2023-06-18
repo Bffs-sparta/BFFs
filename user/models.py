@@ -99,7 +99,7 @@ class Verify(models.Model):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     nickname = models.CharField(max_length=24)
     profileimage = models.ImageField(upload_to="profile_img/", null=True, blank=True)
     introduction = models.TextField(null=True, blank=True, default=None)

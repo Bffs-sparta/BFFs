@@ -7,7 +7,7 @@ from rest_framework.pagination import PageNumberPagination
 from community.models import Community, CommunityAdmin
 from community.serializers import CommunityAdminSerializer
 from decouple import config
-
+from collections import OrderedDict
 from feed.models import (
     Comment,
     Cocomment,
@@ -32,11 +32,39 @@ from feed.serializers import (
     JoinedUserCreateSerializer,
     JoinedUserSerializer,
 )
+from community.serializers import CommunityUrlSerializer
+import math
 
 
 class CustomPagination(PageNumberPagination):
     page_size = 4
     page_size_query_param = "page_size"
+
+    def get_paginated_response(self, data):
+        response = super().get_paginated_response(data)
+        response.data["total_pages"] = math.ceil(
+            self.page.paginator.count / self.page_size
+        )
+        response.data["before_page"] = (
+            None if self.page.number == 1 else self.page.number - 1
+        )
+        response.data["re_before_page"] = (
+            None if self.page.number < 2 else self.page.number - 2
+        )
+        response.data["current_page"] = self.page.number
+        response.data["after_page"] = (
+            None
+            if self.page.number >= self.page.paginator.num_pages
+            else self.page.number + 1
+        )
+        response.data["re_after_page"] = (
+            None
+            if self.page.number >= self.page.paginator.num_pages - 1
+            else self.page.number + 2
+        )
+        response.data["last_page"] = self.page.paginator.num_pages
+        response.data["url"] = self.request.build_absolute_uri().split("?")[0]
+        return response
 
 
 class CommentView(APIView):
@@ -46,9 +74,14 @@ class CommentView(APIView):
     def post(self, request, feed_id):
         serializer = CommentCreateSerializer(data=request.data)
         if serializer.is_valid():
-            print(request.user)
             serializer.save(user=request.user, feed_id=feed_id)
-            return Response({"message": "댓글을 작성했습니다."}, status=status.HTTP_201_CREATED)
+            feed = get_object_or_404(Feed, id=feed_id)
+            comment = feed.comment.all().order_by("-created_at")
+            comment_serializer = CommentSerializer(comment, many=True)
+            return Response(
+                {"message": "댓글을 작성했습니다.", "comment": comment_serializer.data},
+                status=status.HTTP_201_CREATED,
+            )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -139,8 +172,8 @@ class FeedListView(APIView):
     pagination_class = CustomPagination()
 
     # feed 전체 리스트 view
-    def get(self, request, community_name):
-        community = Community.objects.get(title=community_name)
+    def get(self, request, community_url):
+        community = Community.objects.get(communityurl=community_url)
         feed_list = Feed.objects.filter(category__community=community).order_by(
             "-created_at"
         )
@@ -163,10 +196,21 @@ class FeedCategoryListView(APIView):
     pagination_class = CustomPagination()
 
     # feed 카테고리 리스트 view
-    def get(self, request, community_name, category_name):
+    def get(self, request, community_url, category_url):
+        community_introduction = get_object_or_404(
+            Community, communityurl=community_url
+        ).introduction
+        community_title = get_object_or_404(Community, communityurl=community_url).title
+        category_name = (
+            Category.objects.filter(
+                community__communityurl=community_url, category_url=category_url
+            )
+            .first()
+            .category_name
+        )
         feed_list = Feed.objects.filter(
-            category__community__title=community_name,
-            category__category_name=category_name,
+            category__community__communityurl=community_url,
+            category__category_url=category_url,
         ).order_by("-created_at")
         if not feed_list:
             return Response(
@@ -180,7 +224,15 @@ class FeedCategoryListView(APIView):
             pagination_serializer = self.pagination_class.get_paginated_response(
                 serializer.data
             )
-            return Response(pagination_serializer.data, status=status.HTTP_200_OK)
+            return Response(
+                {
+                    "community_title": community_title,
+                    "category_name": category_name,
+                    "introduction": community_introduction,
+                    "feed": pagination_serializer.data,
+                },
+                status=status.HTTP_200_OK,
+            )
 
 
 class FeedDetailView(APIView):
@@ -190,42 +242,46 @@ class FeedDetailView(APIView):
     model = Feed
 
     # feed 상세 및 comment,cocomment 함께 가져오기
-    def get(self, request, community_name, feed_id):
-        # community_name이 있어야 prev, next view가 작동합니다!
+    def get(self, request, community_url, feed_id):
+        # community_url이 있어야 prev, next view가 작동합니다!
         feed = get_object_or_404(Feed, id=feed_id)
-
-        serializer = FeedDetailSerializer(feed)
-        community = Category.objects.get(id=feed.category_id).community.title
+        community = Category.objects.get(id=feed.category_id).community
+        comment = feed.comment.all().order_by("-created_at")
         admin = Category.objects.get(id=feed.category_id).community.comu
+        previous = (
+            Feed.objects.filter(
+                id__lt=feed_id, category__community__communityurl=community_url
+            )
+            .order_by("-id")
+            .first()
+        )
+        next = (
+            Feed.objects.filter(
+                id__gt=feed_id, category__community__communityurl=community_url
+            )
+            .order_by("id")
+            .first()
+        )
+
+        feed_serializer = FeedDetailSerializer(feed, context={"request": request})
         admin_serializer = CommunityAdminSerializer(admin, many=True)
-        comment = feed.comment.all().order_by("created_at")
-        # 댓글 유무 여부 확인
-        if not comment:
-            feed.click
-            return Response(
-                {
-                    "message": "조회수 +1",
-                    "community": community,
-                    "feed": serializer.data,
-                    "admin": admin_serializer.data,
-                    "comment": "아직 댓글이 없습니다",
-                },
-                status=status.HTTP_200_OK,
-            )
-        else:
-            comment_serializer = CommentSerializer(comment, many=True)
-            # feed를 get할 때 조회수 올리기
-            feed.click
-            return Response(
-                {
-                    "message": "조회수 +1",
-                    "community": community,
-                    "feed": serializer.data,
-                    "admin": admin_serializer.data,
-                    "comment": comment_serializer.data,
-                },
-                status=status.HTTP_200_OK,
-            )
+        commnity_serializer = CommunityUrlSerializer(
+            community, context={"request": request}
+        )
+        comment_serializer = CommentSerializer(comment, many=True)
+
+        feed.click
+
+        response = {
+            "feed": feed_serializer.data,
+            "community": commnity_serializer.data,
+            "admin": admin_serializer.data,
+            "previous": previous.id if previous else None,
+            "next": next.id if next else None,
+        }
+        response["comment"] = comment_serializer.data or "아직 댓글이 없습니다"
+
+        return Response(response, status=status.HTTP_200_OK)
 
     # feed 조회수 기능 => get할때 조회수가 올라가도록 바꾸기! 작동 확인 후 주석 및 코드 삭제하도록 하겠음
     # def post(self, request, feed_id):
@@ -289,9 +345,9 @@ class LikeView(APIView):
 class FeedNotificationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, community_name, feed_id):
+    def post(self, request, community_url, feed_id):
         feed = get_object_or_404(Feed, id=feed_id)
-        community = Community.objects.get(title=community_name)
+        community = Community.objects.get(communityurl=community_url)
 
         # 유저가 admin인지 확인
         user = CommunityAdmin.objects.filter(
@@ -337,9 +393,9 @@ class GroupPurchaseCreateView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, community_name):
+    def post(self, request, community_url):
         serializer = GroupPurchaseCreateSerializer(data=request.data)
-        community = Community.objects.get(title=community_name)
+        community = Community.objects.get(communityurl=community_url)
         if serializer.is_valid():
             serializer.save(community=community, user=request.user)
             return Response(
@@ -358,9 +414,9 @@ class GroupPurchaseDetailView(APIView):
     model = Feed
 
     # feed 상세 및 comment,cocomment 함께 가져오기
-    def get(self, request, community_name, grouppurchase_id):
+    def get(self, request, community_url, grouppurchase_id):
         purchasefeed = get_object_or_404(GroupPurchase, id=grouppurchase_id)
-        community = Community.objects.get(title=community_name)
+        community = Community.objects.get(communityurl=community_url)
         serializer = GroupPurchaseDetailSerializer(purchasefeed)
         # comment = purchasefeed.comment.all().order_by("created_at")
         # 댓글 유무 여부 확인
@@ -416,8 +472,8 @@ class GroupPurchaseDetailView(APIView):
 class GroupPurchaseListView(APIView):
     """공구 list"""
 
-    def get(self, request, community_name):
-        community = Community.objects.get(title=community_name)
+    def get(self, request, community_url):
+        community = Community.objects.get(communityurl=community_url)
         feed_list = (
             GroupPurchase.objects.filter(community_id=community.id)
             .order_by("-created_at")

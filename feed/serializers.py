@@ -43,6 +43,10 @@ class CommentCreateSerializer(serializers.ModelSerializer):
             "text",
         ]
 
+    def create(self, validated_data):
+        comment = Comment.objects.create(**validated_data)
+        return comment
+
 
 class CommentSerializer(serializers.ModelSerializer):
     """댓글 serializer"""
@@ -71,8 +75,6 @@ class CommentSerializer(serializers.ModelSerializer):
         return Profile.objects.get(user=obj.user).id
 
     def get_nickname(self, obj):
-        print(Profile.objects.get(user=obj.user).nickname)
-        print(obj.user)
         return Profile.objects.get(user=obj.user).nickname
 
 
@@ -80,6 +82,7 @@ class FeedTitleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feed
         fields = [
+            "id",
             "category",
             "title",
             "view_count",
@@ -99,6 +102,7 @@ class FeedListSerializer(serializers.ModelSerializer):
             "user",
             "nickname",
             "title",
+            "content",
             "image",
             "view_count",
             "created_at",
@@ -146,6 +150,7 @@ class FeedDetailSerializer(serializers.ModelSerializer):
     likes = serializers.StringRelatedField(many=True)
     nickname = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
+    like_bool = serializers.SerializerMethodField()
 
     class Meta:
         model = Feed
@@ -157,6 +162,7 @@ class FeedDetailSerializer(serializers.ModelSerializer):
             "created_at": {"read_only": True},
             "updated_at": {"read_only": True},
             "likes": {"read_only": True},
+            "like_bool": {"read_only": True},
         }
 
     def get_likes_count(self, obj):
@@ -167,6 +173,34 @@ class FeedDetailSerializer(serializers.ModelSerializer):
 
     def get_category(self, obj):
         return Category.objects.get(id=obj.category_id).category_name
+
+    def get_like_bool(self, obj):
+        request = self.context.get("request", None)
+        user = request.user
+        if request and user in obj.likes.all():
+            return True
+        else:
+            return False
+
+
+class ProfileFeedSerializer(serializers.ModelSerializer):
+    """feed 상세 serializer"""
+
+    nickname = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Feed
+        fields = "__all__"
+        extra_kwargs = {
+            "id": {"read_only": True},
+            "user": {"read_only": True},
+            "nickname": {"read_only": True},
+            "created_at": {"read_only": True},
+            "updated_at": {"read_only": True},
+        }
+
+    def get_nickname(self, obj):
+        return Profile.objects.get(user=obj.user).nickname
 
 
 class FeedNotificationSerializer(serializers.ModelSerializer):

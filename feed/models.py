@@ -51,6 +51,7 @@ class Category(models.Model):
         Community, on_delete=models.CASCADE, related_name="community_category"
     )
     category_name = models.CharField(max_length=20)
+    category_url = models.CharField(max_length=20)
 
     class Meta:
         verbose_name = "커뮤니티 카테고리(Category)"

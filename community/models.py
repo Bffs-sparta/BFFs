@@ -14,6 +14,7 @@ class Community(models.Model):
             raise ValueError("이미지의 크기는 5MB 이하여야 합니다.")
 
     title = models.CharField(max_length=20, unique=True)
+    communityurl = models.CharField(max_length=20, unique=True)
     introduction = models.TextField()
     image = models.ImageField(
         upload_to="community_img/", null=True, blank=True, validators=[validate_image]

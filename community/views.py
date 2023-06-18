@@ -8,7 +8,7 @@ from django.shortcuts import redirect
 
 
 from user.models import User
-from user.serializers import UserSerializer
+from user.serializers import SearchUserSerializer
 from feed.models import Category, Feed
 from .models import Community, CommunityAdmin, ForbiddenWord
 from .serializers import (
@@ -38,9 +38,13 @@ class CommunityView(APIView):
         CommunityAdmin.objects.create(
             user=request.user, community=community, is_comuadmin=True
         )
-        base_categories = ["얘기해요", "모집해요", "공구해요"]
+        base_categories = [
+            {"category_name": "얘기해요", "category_url": "talk"},
+            {"category_name": "모집해요", "category_url": "join"},
+            {"category_name": "공구해요", "category_url": "groupbuy"},
+        ]
         for base_category in base_categories:
-            Category.objects.create(community=community, category_name=base_category)
+            Category.objects.create(community=community, **base_category)
         return Response(
             {"data": serializer.data, "msg": "커뮤니티 생성 신청이 완료되었습니다."},
             status=status.HTTP_202_ACCEPTED,
@@ -50,23 +54,23 @@ class CommunityView(APIView):
 class CommunityDetailView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get(self, request, community_name):
+    def get(self, request, community_url):
         """커뮤니티 관리자 페이지에서 조회 및 북마크, 어드민 조회"""
-        community = get_object_or_404(Community, title=community_name)
-        community_admin = community.comu.get(is_comuadmin=True).user
-        if community_admin == request.user:
-            communities = Community.objects.get(title=community_name)
-            serializer = CommunitySerializer(communities)
-            return Response(
-                {"data": serializer.data, "msg": "조회가 완료되었습니다."},
-                status=status.HTTP_200_OK,
-            )
-        else:
-            return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        # community = get_object_or_404(Community, communityurl=community_url)
+        # community_admin = community.comu.get(is_comuadmin=True).user
+        # if community_admin == request.user:
+        community = get_object_or_404(Community, communityurl=community_url)
+        serializer = CommunitySerializer(community)
+        return Response(
+            {"data": serializer.data, "msg": "조회가 완료되었습니다."},
+            status=status.HTTP_200_OK,
+        )
+        # else:
+        #    return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
-    def put(self, request, community_name):
+    def put(self, request, community_url):
         """커뮤니티 수정"""
-        community = get_object_or_404(Community, title=community_name)
+        community = get_object_or_404(Community, communityurl=community_url)
         community_admin = community.comu.get(is_comuadmin=True).user
         if community_admin == request.user:
             serializer = CommunityUpdateSerializer(community, data=request.data)
@@ -79,9 +83,9 @@ class CommunityDetailView(APIView):
         else:
             return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
-    def delete(self, request, community_name):
+    def delete(self, request, community_url):
         """커뮤니티 삭제"""
-        community = get_object_or_404(Community, title=community_name)
+        community = get_object_or_404(Community, communityurl=community_url)
         community_admin = community.comu.get(is_comuadmin=True).user
         if community_admin == request.user:
             community.delete()
@@ -91,11 +95,11 @@ class CommunityDetailView(APIView):
 
 
 class CommunityCategoryView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get(self, request, community_name):
+    def get(self, request, community_url):
         """게시글 작성 페이지에서 커뮤니티 카테고리 조회"""
-        community = get_object_or_404(Community, title=community_name)
+        community = get_object_or_404(Community, communityurl=community_url)
         serializer = CommunityCategorySerializer(community)
         return Response(
             {"data": serializer.data, "msg": "조회가 완료되었습니다."},
@@ -106,9 +110,9 @@ class CommunityCategoryView(APIView):
 class CommunitySubAdminView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get(self, request, community_name):
+    def get(self, request, community_url):
         """어드민 등록을 위한 현재 커뮤니티의 유저를 제외한 전체 유저 조회"""
-        community = get_object_or_404(Community, title=community_name)
+        community = get_object_or_404(Community, communityurl=community_url)
         try:
             exist_users = community.comu.filter(
                 Q(is_comuadmin=True) | Q(is_subadmin=True)
@@ -116,16 +120,16 @@ class CommunitySubAdminView(APIView):
             user_ids = exist_users.values_list("user_id", flat=True)
             try:
                 excluded_users = User.objects.all().exclude(id__in=user_ids)
-                serializer = UserSerializer(excluded_users, many=True)
+                serializer = SearchUserSerializer(excluded_users, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
             except User.DoesNotExist:
                 return Response(status=status.HTTP_404_NOT_FOUND)
         except CommunityAdmin.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-    def post(self, request, community_name):
+    def post(self, request, community_url):
         """서브 어드민 등록"""
-        community = get_object_or_404(Community, title=community_name)
+        community = get_object_or_404(Community, communityurl=community_url)
         community_admin = community.comu.get(is_comuadmin=True).user
 
         if community_admin == request.user:
@@ -147,9 +151,9 @@ class CommunitySubAdminView(APIView):
         else:
             return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
-    def delete(self, request, community_name):
+    def delete(self, request, community_url):
         """서브 어드민 삭제"""
-        community = get_object_or_404(Community, title=community_name)
+        community = get_object_or_404(Community, communityurl=community_url)
         community_admin = community.comu.get(is_comuadmin=True).user
         if community_admin == request.user:
             if community.comu.filter(user_id=request.data["user"]).exists():
@@ -168,16 +172,16 @@ class CommunitySubAdminView(APIView):
 class CommunityForbiddenView(APIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def get(self, request, community_name):
+    def get(self, request, community_url):
         """커뮤니티 금지어 조회"""
-        community = get_object_or_404(Community, title=community_name)
+        community = get_object_or_404(Community, communityurl=community_url)
         forbiddenword = ForbiddenWord.objects.filter(community_id=community.id)
         serializer = ForbiddenWordSerializer(forbiddenword, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def post(self, request, community_name):
+    def post(self, request, community_url):
         """커뮤니티 금지어 생성"""
-        community = get_object_or_404(Community, title=community_name)
+        community = get_object_or_404(Community, communityurl=community_url)
         community_admin = community.comu.get(is_comuadmin=True).user
         community_subadmin = [
             admin.user for admin in community.comu.filter(is_subadmin=True)
@@ -198,9 +202,9 @@ class CommunityForbiddenView(APIView):
         else:
             return Response({"msg": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
-    def delete(self, request, community_name, forbidden_word):
+    def delete(self, request, community_url, forbidden_word):
         """커뮤니티 금지어 삭제"""
-        community = get_object_or_404(Community, title=community_name)
+        community = get_object_or_404(Community, communityurl=community_url)
         community_admin = community.comu.get(is_comuadmin=True).user
         if community_admin == request.user:
             word = ForbiddenWord.objects.get(word=forbidden_word)
@@ -213,9 +217,9 @@ class CommunityForbiddenView(APIView):
 class CommunityBookmarkView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, community_name):
+    def post(self, request, community_url):
         """북마크 등록 및 취소"""
-        community = get_object_or_404(Community, title=community_name)
+        community = get_object_or_404(Community, communityurl=community_url)
         if request.user in community.bookmarked.all():
             community.bookmarked.remove(request.user)
             return Response({"msg": "북마크가 취소되었습니다."}, status=status.HTTP_200_OK)
@@ -228,41 +232,33 @@ class SearchCommunityView(ListAPIView):
     """커뮤니티 조회 및 검색"""
 
     queryset = Community.objects.all()
-    serializer_class = CommunityCreateSerializer
+    serializer_class = CommunitySerializer
     filter_backends = [filters.SearchFilter]
-    search_fields = ["title"]
-
-
-class SearchUserView(ListAPIView):
-    """유저 조회 및 검색"""
-
-    queryset = User.objects.all()
-    serializer_class = SearchUserSerializer
-    filter_backends = [filters.SearchFilter]
-    search_fields = ["name"]
+    search_fields = ["title", "communityurl", "introduction"]
+    pagination_class = None
 
 
 class FeedNextView(APIView):
     """피드 다음 글"""
 
-    def get(self, request, community_name, feed_id):
-        community = Community.objects.get(title=community_name)
+    def get(self, request, community_url, feed_id):
+        community = Community.objects.get(communityurl=community_url)
         feed_list = Feed.objects.filter(
             category__community=community, id__gt=feed_id
         ).order_by("created_at")
         if not feed_list:
             return Response({"message": "다음 게시글이 없습니다"})
-        return redirect("feed_detail_view", community_name, feed_list.first().id)
+        return redirect("feed_detail_view", community_url, feed_list.first().id)
 
 
 class FeedPrevView(APIView):
     """피드 이전 글"""
 
-    def get(self, request, community_name, feed_id):
-        community = Community.objects.get(title=community_name)
+    def get(self, request, community_url, feed_id):
+        community = Community.objects.get(communityurl=community_url)
         feed_list = Feed.objects.filter(
             category__community=community, id__lt=feed_id
         ).order_by("-created_at")
         if not feed_list:
             return Response({"message": "이전 게시글이 없습니다"})
-        return redirect("feed_detail_view", community_name, feed_list.first().id)
+        return redirect("feed_detail_view", community_url, feed_list.first().id)

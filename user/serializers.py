@@ -9,11 +9,14 @@ from django.core.files.storage import default_storage
 from uuid import uuid4
 import os
 from decouple import config
+from django.shortcuts import get_object_or_404
 
 
 # class UserCreateSerializer(serializers.ModelSerializer):
+#     nickname = serializers.CharField()
+##     region = serializers.CharField()
 #     class Meta:
-#         fields = ("email", "name", "password")
+#         fields = ("email", "name", "password", "nickname", "region")
 #         extra_kwargs = {"password": {"write_only": True}}
 #         model = User
 
@@ -134,6 +137,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     user_name = serializers.SerializerMethodField()
     user_email = serializers.SerializerMethodField()
     bookmark_count = serializers.SerializerMethodField()
+    login_type = serializers.SerializerMethodField()
     # 이메일,
 
     class Meta:
@@ -147,7 +151,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "introduction",
             "profileimage",
             "profileimageurl",
+            "profileimageurl",
             "created_at",
+            "login_type",
             "bookmark_count",
         )
 
@@ -159,6 +165,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     def get_user_email(self, obj):
         return obj.user.email
+
+    def get_login_type(self, obj):
+        return obj.user.login_type
 
     def get_bookmark_count(self, obj):
         return obj.comment_set.count()
@@ -244,9 +253,22 @@ class UserDelSerializer(serializers.ModelSerializer):
 
 
 class GuestBookSerializer(serializers.ModelSerializer):
+    nickname = serializers.SerializerMethodField()
+
     class Meta:
         model = GuestBook
-        fields = "__all__"
+        fields = (
+            "id",
+            "user",
+            "profile",
+            "comment",
+            "created_at",
+            "updated_at",
+            "nickname",
+        )
+
+    def get_nickname(self, obj):
+        return obj.user.profile.nickname
 
 
 class GuestBookCreateSerializer(serializers.ModelSerializer):
@@ -256,15 +278,17 @@ class GuestBookCreateSerializer(serializers.ModelSerializer):
 
 
 class SearchUserSerializer(serializers.ModelSerializer):
-    name = serializers.StringRelatedField(source="user.name")
-    nickname = serializers.StringRelatedField(source="user.nickname")
-    last_login = serializers.StringRelatedField(source="user.last_login")
+    nickname = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = [
+        fields = (
             "id",
             "name",
             "nickname",
+            "email",
             "last_login",
-        ]
+        )
+
+    def get_nickname(self, obj):
+        return obj.profile.nickname
