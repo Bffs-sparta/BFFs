@@ -459,3 +459,5 @@ $RECYCLE.BIN/
 .env
 
 **/migrations/*.py
+
+!__init__.py
