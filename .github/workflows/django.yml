@@ -36,10 +36,12 @@ jobs:
 
     - name: Run Django Migrations
       run: |
+        source .env
         poetry run python manage.py migrate
 
     - name: Run Django-cron Jobs
       run: |
+        source .env
         poetry run python manage.py runcrons
 
     - name: Run Celery Worker
