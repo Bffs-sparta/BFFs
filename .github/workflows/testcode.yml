@@ -1,0 +1,32 @@
+name: Django Test
+
+on:
+  push:
+    branches:
+      - main  # 또는 다른 브랜치 이름
+  pull_request:
+    branches:
+      - main  # 또는 다른 브랜치 이름
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8  # 사용할 Python 버전을 선택합니다.
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        export PATH="$HOME/.poetry/bin:$PATH"
+        poetry install --no-root  # poetry를 사용하여 의존성을 설치합니다.
+
+    - name: Run tests
+      run: |
+        poetry run python manage.py test  # poetry 환경에서 Django 테스트를 실행합니다.
