@@ -34,6 +34,7 @@ class CocommentSerializer(serializers.ModelSerializer):
         model = Cocomment
         fields = [
             "id",
+            "user",
             "user_id",
             "nickname",
             "text",
@@ -47,11 +48,10 @@ class CocommentSerializer(serializers.ModelSerializer):
             "updated_at": {"read_only": True},
         }
 
+    def get_nickname(self, obj):
+        return Profile.objects.get(id=obj.user_id).nickname
     def get_user_id(self, obj):
         return Profile.objects.get(user=obj.user).id
-
-    def get_nickname(self, obj):
-        return Profile.objects.get(user=obj.user).nickname
 
 
 class CommentCreateSerializer(serializers.ModelSerializer):
@@ -71,6 +71,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     user_id = serializers.SerializerMethodField()
     nickname = serializers.SerializerMethodField()
+    cocomment = CocommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Comment
@@ -81,6 +82,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "text",
             "created_at",
             "updated_at",
+            "cocomment",
         ]
         extra_kwargs = {
             "id": {"read_only": True},
@@ -94,6 +96,9 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_nickname(self, obj):
         return Profile.objects.get(user=obj.user).nickname
+
+    def get_cocomment(self, obj):
+        return obj.cocomment.all()
 
 
 class FeedTitleSerializer(serializers.ModelSerializer):
@@ -120,6 +125,7 @@ class FeedListSerializer(serializers.ModelSerializer):
             "user",
             "nickname",
             "title",
+            "content",
             "image",
             "view_count",
             "created_at",
@@ -192,9 +198,8 @@ class FeedDetailSerializer(serializers.ModelSerializer):
         return Category.objects.get(id=obj.category_id).category_name
 
     def get_like_bool(self, obj):
-        request = self.context.get("request", None)
-        user = request.user
-        if request and user in obj.likes.all():
+        request = self.context.get("request")
+        if request.user in obj.likes.all():
             return True
         else:
             return False
@@ -215,6 +220,9 @@ class ProfileFeedSerializer(serializers.ModelSerializer):
             "created_at": {"read_only": True},
             "updated_at": {"read_only": True},
         }
+
+    def get_likes_count(self, obj):
+        return obj.likes.count()
 
     def get_nickname(self, obj):
         return Profile.objects.get(user=obj.user).nickname
