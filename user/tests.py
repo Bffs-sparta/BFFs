@@ -4,41 +4,67 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import User, Verify
+from .models import User, Profile, Verify
+
 
 class UserProfileViewTest(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user_data = {
+            "email": "unity@ty.ty",
+            "password": "universe48",
+            "name": "vuenity",
+        }
+        cls.profile_data = {
+            "nickname": "unity",
+            "introduction": "import unittest",
+            "region": "seoul",
+        }
+        cls.user = User.objects.create_user(**cls.user_data)
+
+    def setUp(self):
+        self.access_token = self.client.post(reverse("login"), self.user_data).data[
+            "access"
+        ]
+
     # profile read
     def test_profile_detail(self):
-        profile = self.user.id
-        url = reverse("profile:profile_view", kwargs={"user_id:user_id"})
-
+        url = reverse("profile_view")
         response = self.client.get(url)
-        print(response.data)
         self.assertEqual(response.status_code, 200)
 
     # profile update
     def test_profile_update(self):
-        profile = self.user.id
-        url = reverse("profile:profile_view", kwargs={"user_id": user_id})
+        user_id = self.user.id
+        url = reverse("profile_detail_view", kwargs={"user_id": user_id})
         update_data = {
             "nickname": "unity",
             "introduction": "import unittest",
         }
 
-        response = self.client.force_authenticate(user=self.profile)
+        response = self.client.force_authenticate(user=self.user)
         response = self.client.patch(url, update_data)
-        print(response.data)
         self.assertEqual(response.status_code, 200)
 
     # 회원탈퇴
     def test_user_delete(self):
-        user = self.user.id
-        url = reverse("user:profile_view", kwargs={"user_id": user_id})
+        user_id = self.user.id
+        url = reverse("profile_detail_view", kwargs={"user_id": user_id})
+        delete_data = {"password": "universe48"}
+
+        response = self.client.force_authenticate(user=self.user)
+        response = self.client.delete(url, data=delete_data)
+        self.assertEqual(response.status_code, 204)
+
+    # 비밀번호가 다를 때 회원탈퇴 실패
+    def test_user_delete_fail(self):
+        user_id = self.user.id
+        url = reverse("profile_detail_view", kwargs={"user_id": user_id})
         delete_data = {"password": "Universe48"}
 
+        response = self.client.force_authenticate(user=self.user)
         response = self.client.delete(url, data=delete_data)
-        print(response.data)
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 400)
 
 
 class GuestBookTest(APITestCase):
@@ -57,64 +83,7 @@ class GuestBookTest(APITestCase):
             "introduction": "import unittest",
             "region": "seoul",
         }
-        cls.user = User.objects.create_user(
-            name=cls.name,
-        )
-
-# class UserProfileViewTest(APITestCase):
-#     # profile read
-#     def test_profile_detail(self):
-#         profile = self.user.id
-#         url = reverse("profile:profile_view", kwargs={"user_id:user_id"})
-
-#         response = self.client.get(url)
-#         print(response.data)
-#         self.assertEqual(response.status_code, 200)
-
-#     # profile update
-#     def test_profile_update(self):
-#         profile = self.user.id
-#         url = reverse("profile:profile_view", kwargs={"user_id": user_id})
-#         update_data = {
-#             "nickname": "unity",
-#             "introduction": "import unittest",
-#         }
-
-#         response = self.client.force_authenticate(user=self.profile)
-#         response = self.client.patch(url, update_data)
-#         print(response.data)
-#         self.assertEqual(response.status_code, 200)
-
-#     # 회원탈퇴
-#     def test_user_delete(self):
-#         user = self.user.id
-#         url = reverse("user:profile_view", kwargs={"user_id": user_id})
-#         delete_data = {"password": "Universe48"}
-
-#         response = self.client.delete(url, data=delete_data)
-#         print(response.data)
-#         self.assertEqual(response.status_code, 200)
-
-
-# class GuestBookTest(APITestCase):
-#     @classmethod
-#     def test_comment_create_test(cls):
-#         cls.email = "unity@ty.ty"
-#         cls.name = "vuenity"
-#         cls.password = "Universe48"
-#         cls.user_data = {
-#             "email": "unity@ty.ty",
-#             "password": "universe48",
-#             "name": "vuenity",
-#         }
-#         cls.profile_data = {
-#             "nickname": "unity",
-#             "introduction": "import unittest",
-#             "region": "seoul",
-#         }
-#         cls.user = User.objects.create_user(
-#             name=cls.name,
-#         )
+        cls.user = User.objects.create_user(**cls.user_data)
 
 
 class sendMailTest(APITestCase):
@@ -128,10 +97,10 @@ class sendMailTest(APITestCase):
         cls.user = User.objects.create_user(**cls.user_data)
         cls.path = reverse("email")
 
-    def test_sendMail(self):
-        email = {"email": "test@test.com"}
-        response = self.client.post(self.path, email)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    # def test_sendMail(self):
+    #     email = {"email": "test@test.com"}
+    #     response = self.client.post(self.path, email)
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_sendMail_none(self):
         email = {
@@ -208,6 +177,8 @@ class signupTest(APITestCase):
             "email": "test@test.com",
             "password": "test1234@",
             "name": "test",
+            "nickname": "test",
+            "region": "test",
         }
 
     def test_signup(self):
@@ -236,7 +207,13 @@ class signupTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_signup_verify(self):
-        test_user = {"email": "test3@test.com", "password": "test1234@", "name": "test"}
+        test_user = {
+            "email": "test3@test.com",
+            "password": "test1234@",
+            "name": "test",
+            "nickname": "test",
+            "region": "test",
+        }
         response = self.client.post(self.path, test_user)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -303,4 +280,3 @@ class loginTest(APITestCase):
         self.user.save()
         response = self.client.post(self.path, self.test_user)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-

@@ -133,6 +133,7 @@ class FeedListSerializer(serializers.ModelSerializer):
             "category",
             "comments_count",
             "likes_count",
+            "is_notification",
         ]
 
     def get_nickname(self, obj):
@@ -355,7 +356,7 @@ class GroupPurchaseCreateSerializer(serializers.ModelSerializer):
         open_at = datetime.strptime(data.get("open_at"), "%Y-%m-%dT%H:%M:%S")
         close_at = datetime.strptime(data.get("close_at"), "%Y-%m-%dT%H:%M:%S")
         meeting_at = datetime.strptime(data.get("meeting_at"), "%Y-%m-%dT%H:%M:%S")
-        if now >= open_at and meeting_at < open_at:
+        if now >= open_at or meeting_at < open_at:
             raise serializers.ValidationError({"error": "현재 이후의 시점을 선택해주세요."})
         if close_at and open_at > close_at:
             raise serializers.ValidationError({"error": "공구 시작 시간보다 이후의 시점을 선택해주세요."})

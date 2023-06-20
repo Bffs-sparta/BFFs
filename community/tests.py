@@ -21,17 +21,21 @@ class CommunityViewTest(APITestCase):
         }
         cls.user = User.objects.create_user("test1@naver.com", "test1", "test123!")
         cls.user2 = User.objects.create_user("test2@naver.com", "test2", "test123!")
-        cls.community_data = {"title": "title1", "introduction": "introduction1"}
+        cls.community_data = {
+            "title": "title1",
+            "communityurl": "title1",
+            "introduction": "introduction1",
+        }
         cls.community_edit_data = {"introduction": "introduction1"}
         cls.community = Community.objects.create(
-            title="title2", introduction="introduction2"
+            title="title2", communityurl="title2", introduction="introduction2"
         )
         CommunityAdmin.objects.create(
             user=cls.user, community=cls.community, is_comuadmin=True
         )
         cls.path = reverse("community_view")
         cls.path_name = reverse(
-            "community_detail_view", kwargs={"community_name": "title2"}
+            "community_detail_view", kwargs={"community_url": "title2"}
         )
 
     def setUp(self):
@@ -56,7 +60,9 @@ class CommunityViewTest(APITestCase):
 
     def test_post_community_unique_name(self):
         """커뮤니티 생성시 unique title 확인"""
-        Community.objects.create(title="title1", introduction="introduction1")
+        Community.objects.create(
+            title="title1", communityurl="title1", introduction="introduction1"
+        )
 
         response = self.client.post(
             path=self.path,
@@ -96,7 +102,7 @@ class CommunityViewTest(APITestCase):
     def test_put_community_no_comu(self):
         """커뮤니티 없을때 커뮤니티 수정 실패"""
         response = self.client.put(
-            path=reverse("community_detail_view", kwargs={"community_name": "title3"}),
+            path=reverse("community_detail_view", kwargs={"community_url": "title3"}),
             data=self.community_edit_data,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
@@ -130,7 +136,7 @@ class CommunityViewTest(APITestCase):
     def test_delete_community_no_comu(self):
         """커뮤니티 없을때 커뮤니티 삭제 실패"""
         response = self.client.delete(
-            path=reverse("community_detail_view", kwargs={"community_name": "title3"}),
+            path=reverse("community_detail_view", kwargs={"community_url": "title3"}),
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 404)
@@ -184,7 +190,7 @@ class CommunitySubAdminViewTest(APITestCase):
         cls.user4 = User.objects.create_user("test4@naver.com", "test4", "test123!")
         cls.user5 = User.objects.create_user("test5@naver.com", "test5", "test123!")
         cls.community = Community.objects.create(
-            title="title1", introduction="introduction1"
+            title="title1", communityurl="title1", introduction="introduction1"
         )
         CommunityAdmin.objects.create(
             user=cls.user, community=cls.community, is_comuadmin=True
@@ -193,10 +199,10 @@ class CommunitySubAdminViewTest(APITestCase):
             user=cls.user2, community=cls.community, is_subadmin=True
         )
         cls.path = reverse(
-            "community_subadmin_view", kwargs={"community_name": "title1"}
+            "community_subadmin_view", kwargs={"community_url": "title1"}
         )
         cls.path2 = reverse(
-            "community_subadmin_view", kwargs={"community_name": "title2"}
+            "community_subadmin_view", kwargs={"community_url": "title2"}
         )
         cls.exist_subadmin_data = {"user": 2}
 
@@ -329,7 +335,7 @@ class CommunityForbiddenViewTest(APITestCase):
         cls.user = User.objects.create_user("test1@naver.com", "test1", "test123!")
         cls.user2 = User.objects.create_user("test2@naver.com", "test2", "test123!")
         cls.community = Community.objects.create(
-            title="title1", introduction="introduction1"
+            title="title1", communityurl="title1", introduction="introduction1"
         )
         CommunityAdmin.objects.create(
             user=cls.user, community=cls.community, is_comuadmin=True
@@ -338,10 +344,10 @@ class CommunityForbiddenViewTest(APITestCase):
             user=cls.user2, community=cls.community, is_subadmin=True
         )
         cls.path = reverse(
-            "community_forbidden_view", kwargs={"community_name": "title1"}
+            "community_forbidden_view", kwargs={"community_url": "title1"}
         )
         cls.path2 = reverse(
-            "community_forbidden_view", kwargs={"community_name": "title2"}
+            "community_forbidden_view", kwargs={"community_url": "title2"}
         )
         cls.word_data = {"word": "word"}
         ForbiddenWord.objects.create(word="word2", community=cls.community)
@@ -423,13 +429,13 @@ class CommunityBookmarkViewTest(APITestCase):
         }
         cls.user = User.objects.create_user("test1@naver.com", "test1", "test123!")
         cls.community = Community.objects.create(
-            title="title1", introduction="introduction1"
+            title="title1", communityurl="title1", introduction="introduction1"
         )
         cls.path = reverse(
-            "community_bookmark_view", kwargs={"community_name": "title1"}
+            "community_bookmark_view", kwargs={"community_url": "title1"}
         )
         cls.path2 = reverse(
-            "community_bookmark_view", kwargs={"community_name": "title2"}
+            "community_bookmark_view", kwargs={"community_url": "title2"}
         )
 
     def setUp(self):

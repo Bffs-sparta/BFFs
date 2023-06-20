@@ -53,7 +53,7 @@ urlpatterns = [
     ),
     # grouppurchase 게시글 생성
     path(
-        "<str:community_name>/grouppurchase/",
+        "<str:community_url>/grouppurchase/",
         GroupPurchaseCreateView.as_view(),
         name="grouppurchase_create_view",
     ),

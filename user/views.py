@@ -238,6 +238,8 @@ def get_token(user):
 
 
 class ProfileView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def get(self, request):
         profile = Profile.objects.all()
         profile_serializer = UserProfileSerializer(profile, many=True)
@@ -246,6 +248,8 @@ class ProfileView(APIView):
 
 # 프로필 id 받아오는 거로 수정할 예정!!!!!!!!!!!!!!!!!!
 class ProfileDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
     def get(self, request, user_id):
         profile = Profile.objects.get(user_id=user_id)
         profile_serializer = UserProfileSerializer(profile)
@@ -307,6 +311,8 @@ class ProfileDetailView(APIView):
 
 
 class GuestBookView(APIView):
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
     def get(self, request, profile_id):
         profile = Profile.objects.get(id=profile_id)
         comments = profile.comment_set.all()
@@ -323,6 +329,8 @@ class GuestBookView(APIView):
 
 
 class GuestBookDetailView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
     def patch(self, request, profile_id, guestbook_id):
         comment = GuestBook.objects.get(id=guestbook_id)
         if request.user == comment.user:
