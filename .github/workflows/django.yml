@@ -1,0 +1,49 @@
+name: Django CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.11
+
+    - name: Install Dependencies
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        export PATH="$HOME/.poetry/bin:$PATH"
+        poetry install --no-root
+
+    - name: Set up environment variables
+      run: echo "$ENV_VARIABLES" > .env 
+
+    - name: Start RabbitMQ
+      run: |
+        sudo apt-get install -y rabbitmq-server 
+        sudo service rabbitmq-server start
+
+    - name: Run Django Migrations
+      run: |
+        poetry run python manage.py migrate
+
+    - name: Run Django-cron Jobs
+      run: |
+        poetry run python manage.py runcrons
+
+    - name: Run Celery Worker
+      run: |
+        poetry run celery -A BFFs worker --loglevel=info -P eventlet
+
+    - name: Run Tests with environment variables
+      run: |
+        source .env
+        poetry run python manage.py test
