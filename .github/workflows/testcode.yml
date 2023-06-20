@@ -32,6 +32,6 @@ jobs:
     - name: Run Tests with environment variables
       run: |
         source .env  # Load environment variables from .env file
-        poetry run python manage.py makemigations
+        poetry run python manage.py makemigrations
         poetry run python manage.py migrate
         poetry run python manage.py test
