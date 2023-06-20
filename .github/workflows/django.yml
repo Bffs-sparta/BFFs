@@ -24,7 +24,10 @@ jobs:
         poetry install --no-root
 
     - name: Set up environment variables
-      run: echo "$ENV_VARIABLES" > .env 
+      run: |
+        echo "SECRET_KEY=$SECRET_KEY" > .env
+        echo "EMAIL=$EMAIL" >> .env
+        echo "EMAIL_PASSWORD=$EMAIL_PASSWORD" >> .env
 
     - name: Start RabbitMQ
       run: |
