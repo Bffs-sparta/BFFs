@@ -25,7 +25,7 @@ jobs:
 
     - name: Set up environment variables
       run: |
-        echo "SECRET_KEY=${{ secrets.SECRET_KEY }" > .env
+        echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > .env
         echo "EMAIL=${{ secrets.EMAIL }}" > .env
         echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD" }} > .env
         
