@@ -28,6 +28,8 @@ jobs:
         echo "SECRET_KEY='${{ secrets.SECRET_KEY }}'" >> .env 
         echo "EMAIL='${{ secrets.EMAIL }}'" >> .env
         echo "EMAIL_PASSWORD='${{ secrets.EMAIL_PASSWORD }}'" >> .env
+        echo "BACKEND_URL='${{ secrets.BACKEND_URL }}'" >> .env
+        echo "FRONTEND_URL='${{ secrets.FRONTEND_URL }}'" >> .env
 
     - name: Run Tests with environment variables
       run: |
