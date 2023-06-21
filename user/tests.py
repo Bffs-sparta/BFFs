@@ -92,7 +92,7 @@ class GuestBookTest(APITestCase):
         }
         cls.user = User.objects.create_user(**cls.user_data)
 
-        cls.comment_data = GuestBook.objects.create(
+        GuestBook.objects.create(
             user=cls.user, comment=cls.comment_data, profile_id=cls.user.id
         )
         
@@ -112,15 +112,16 @@ class GuestBookTest(APITestCase):
     def test_create_comment_view(self):
         response = self.client.post(
             path = reverse("guestbook_view", kwargs={"profile_id":1}), 
-            data=self.comment_update_data,
+            data=self.comment_data,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 200)
         
-    #guestbook comment update
-    def test_comment_update_view(self):
-        response = self.client.patch(
-            path = reverse("guestbook_detail_view", kwargs={"profile_id":1, "guestbook_id": 1}), data=self.comment_update_data,
+    #guestbook comment update   
+    def test_create_comment_view(self):
+        response = self.client.post(
+            path = reverse("guestbook_view", kwargs={"profile_id":1}), 
+            data=self.comment_data,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 200)
