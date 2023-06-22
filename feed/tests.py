@@ -692,9 +692,13 @@ class GroupPurchaseViewTest(APITestCase):
             "access"
         ]
 
-        cls.community_data = {"title": "community1", "introduction": "introduction1"}
+        cls.community_data = {
+            "title": "community1",
+            "communityurl": "community1",
+            "introduction": "introduction1",
+        }
         cls.community = Community.objects.create(
-            title="community1", introduction="introduction1"
+            title="community1", communityurl="community1", introduction="introduction1"
         )
         CommunityAdmin.objects.create(
             user=cls.user, community=cls.community, is_comuadmin=True
@@ -703,9 +707,13 @@ class GroupPurchaseViewTest(APITestCase):
             "id": 3,
             "community": cls.community,
             "category_name": "공구해요",
+            "category_url": "purchase",
         }
         cls.category = Category.objects.create(
-            id=3, community=cls.community, category_name="공구해요"
+            id=3,
+            community=cls.community,
+            category_name="공구해요",
+            category_url="purchase",
         )
 
         cls.grouppurchase = GroupPurchase.objects.create(
@@ -791,17 +799,21 @@ class GroupPurchaseViewTest(APITestCase):
             grouppurchase=cls.grouppurchase, user=cls.user, text="test comment1"
         )
 
-        cls.path = reverse("grouppurchase_create_view", args=[cls.community.title])
+        cls.path = reverse(
+            "grouppurchase_create_view", args=[cls.community.communityurl]
+        )
         cls.path2 = reverse(
             "grouppurchase_put_delete_view", args=[cls.grouppurchase.id]
         )
         cls.path3 = reverse(
             "grouppurchase_put_delete_view", args=[cls.grouppurchase_is_ended.id]
         )
-        cls.path4 = reverse("grouppurchase_list_view", args=[cls.community.title])
+        cls.path4 = reverse(
+            "grouppurchase_list_view", args=[cls.community.communityurl]
+        )
         cls.path5 = reverse(
             "grouppurchase_detail_view",
-            args=[cls.community.title, cls.grouppurchase.id],
+            args=[cls.community.communityurl, cls.grouppurchase.id],
         )
         cls.path6 = reverse("grouppurchase_join_view", args=[cls.grouppurchase.id])
         cls.path7 = reverse(
@@ -833,9 +845,9 @@ class GroupPurchaseViewTest(APITestCase):
             "link": "null",
             "person_limit": "2",
             "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "2023-07-31T12:00:00",
-            "open_at": "2023-07-20T18:00:00",
-            "close_at": "2023-07-23T09:00:00",
+            "meeting_at": "2099-07-31T12:00:00",
+            "open_at": "2025-07-20T18:00:00",
+            "close_at": "2099-07-23T09:00:00",
             "end_option": "공구를 계속 진행할 거예요",
         }
         self.grouppurchase_data_open_fail = {
@@ -850,9 +862,9 @@ class GroupPurchaseViewTest(APITestCase):
             "link": "null",
             "person_limit": "2",
             "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "2023-06-30T12:00:00",
+            "meeting_at": "9999-06-30T12:00:00",
             "open_at": "2023-06-01T18:00:00",
-            "close_at": "2023-06-25T09:00:00",
+            "close_at": "9999-06-25T09:00:00",
             "end_option": "공구를 계속 진행할 거예요",
         }
         self.grouppurchase_data_close_fail = {
@@ -867,8 +879,8 @@ class GroupPurchaseViewTest(APITestCase):
             "link": "null",
             "person_limit": "5",
             "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "2023-06-30T12:00:00",
-            "open_at": "2023-06-25T18:00:00",
+            "meeting_at": "9999-06-30T12:00:00",
+            "open_at": "9999-06-25T18:00:00",
             "close_at": "2023-06-10T09:00:00",
             "end_option": "공구를 계속 진행할 거예요",
         }
@@ -885,8 +897,8 @@ class GroupPurchaseViewTest(APITestCase):
             "person_limit": "2",
             "location": "서울시 송파구, 석촌역 8번출구 앞",
             "meeting_at": "2023-06-10T12:00:00",
-            "open_at": "2023-06-25T18:00:00",
-            "close_at": "2023-06-30T09:00:00",
+            "open_at": "9999-06-25T18:00:00",
+            "close_at": "9999-06-30T09:00:00",
             "end_option": "공구를 계속 진행할 거예요",
         }
         self.grouppurchase_data_is_ended = {
@@ -919,9 +931,9 @@ class GroupPurchaseViewTest(APITestCase):
             "link": "null",
             "person_limit": "2",
             "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "2023-06-30T12:00:00",
-            "open_at": "2023-06-24T18:00:00",
-            "close_at": "2023-06-25T09:00:00",
+            "meeting_at": "9999-06-30T12:00:00",
+            "open_at": "9999-06-24T18:00:00",
+            "close_at": "9999-06-25T09:00:00",
             "end_option": "공구를 계속 진행할 거예요",
         }
         self.grouppurchase_update_data_meeting_fail = {
@@ -937,8 +949,8 @@ class GroupPurchaseViewTest(APITestCase):
             "person_limit": "2",
             "location": "서울시 송파구, 석촌역 8번출구 앞",
             "meeting_at": "2023-06-10T12:00:00",
-            "open_at": "2023-06-24T18:00:00",
-            "close_at": "2023-06-30T09:00:00",
+            "open_at": "9999-06-24T18:00:00",
+            "close_at": "9999-06-30T09:00:00",
             "end_option": "공구를 계속 진행할 거예요",
         }
         self.grouppurchase_update_data_close_fail = {
@@ -953,8 +965,8 @@ class GroupPurchaseViewTest(APITestCase):
             "link": "null",
             "person_limit": "2",
             "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "2023-06-30T12:00:00",
-            "open_at": "2023-06-24T18:00:00",
+            "meeting_at": "9999-06-30T12:00:00",
+            "open_at": "9999-06-24T18:00:00",
             "close_at": "2023-06-10T09:00:00",
             "end_option": "공구를 계속 진행할 거예요",
         }
@@ -971,79 +983,80 @@ class GroupPurchaseViewTest(APITestCase):
             "text": "test update comment1",
         }
 
-    # def test_create_grouppurchase_feed(self):
-    #     """공구 게시글 생성 성공"""
-    #     response = self.client.post(
-    #         path=self.path,
-    #         data=self.grouppurchase_data,
-    #         HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-    #     )
-    #     self.assertEqual(response.status_code, 201)
-    # def test_create_grouppurchase_feed(self):
-    #     """공구 게시글 open 시간이 현재시간보다 느리게 생성"""
-    #     response = self.client.post(
-    #         path=self.path,
-    #         data=self.grouppurchase_data_open_fail,
-    #         HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-    #     )
-    #     self.assertEqual(response.message, "현재 이후의 시점을 선택해주세요.")
-    #     self.assertEqual(response.status_code, 400)
+    def test_create_grouppurchase_feed(self):
+        """공구 게시글 생성 성공"""
+        response = self.client.post(
+            path=self.path,
+            data=self.grouppurchase_data,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 201)
 
-    # def test_create_grouppurchase_feed(self):
-    #     """공구 게시글 close 시간이 open 시간보다 느리게 생성"""
-    #     response = self.client.post(
-    #         path=self.path,
-    #         data=self.grouppurchase_data_close_fail,
-    #         HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-    #     )
-    #     self.assertEqual(response.message, "공구 시작 시간보다 이후의 시점을 선택해주세요.")
-    #     self.assertEqual(response.status_code, 400)
+    def test_create_grouppurchase_feed(self):
+        """공구 게시글 open 시간이 현재시간보다 느리게 생성"""
+        response = self.client.post(
+            path=self.path,
+            data=self.grouppurchase_data_open_fail,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.message, "현재 이후의 시점을 선택해주세요.")
+        self.assertEqual(response.status_code, 400)
 
-    # def test_create_grouppurchase_feed(self):
-    #     """공구 게시글 meeting 시간이 close 시간보다 느리게 생성"""
-    #     response = self.client.post(
-    #         path=self.path,
-    #         data=self.grouppurchase_data_meeting_fail,
-    #         HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-    #     )
-    #     self.assertEqual(response.status_code, 400)
+    def test_create_grouppurchase_feed(self):
+        """공구 게시글 close 시간이 open 시간보다 느리게 생성"""
+        response = self.client.post(
+            path=self.path,
+            data=self.grouppurchase_data_close_fail,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.message, "공구 시작 시간보다 이후의 시점을 선택해주세요.")
+        self.assertEqual(response.status_code, 400)
 
-    # def test_update_grouppurchase_feed(self):
-    #     """공구 게시글 수정 성공"""
-    #     response = self.client.post(
-    #         path=self.path,
-    #         data=self.grouppurchase_update_data,
-    #         HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-    #     )
-    #     self.assertEqual(response.status_code, 201)
+    def test_create_grouppurchase_feed(self):
+        """공구 게시글 meeting 시간이 close 시간보다 느리게 생성"""
+        response = self.client.post(
+            path=self.path,
+            data=self.grouppurchase_data_meeting_fail,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 400)
 
-    # def test_update_grouppurchase_feed(self):
-    #     """공구 게시글 권한없는 유저 실패"""
-    #     response = self.client.post(
-    #         path=self.path,
-    #         data=self.grouppurchase_update_data,
-    #         HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-    #     )
-    #     self.assertEqual(response.status_code, 400)
+    def test_update_grouppurchase_feed(self):
+        """공구 게시글 수정 성공"""
+        response = self.client.post(
+            path=self.path,
+            data=self.grouppurchase_update_data,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 201)
 
-    # def test_update_grouppurchase_feed(self):
-    #     """공구 게시글 수정 실패, close시간"""
-    #     response = self.client.post(
-    #         path=self.path,
-    #         data=self.grouppurchase_update_data_close_fail,
-    #         HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-    #     )
-    #     self.assertEqual(response.message, "현재보다 이후의 시점을 선택해주세요.")
-    #     self.assertEqual(response.status_code, 400)
+    def test_update_grouppurchase_feed(self):
+        """공구 게시글 권한없는 유저 실패"""
+        response = self.client.post(
+            path=self.path,
+            data=self.grouppurchase_update_data,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+        )
+        self.assertEqual(response.status_code, 400)
 
-    # def test_update_grouppurchase_feed(self):
-    #     """공구 게시글 수정 실패, meeting시간"""
-    #     response = self.client.post(
-    #         path=self.path,
-    #         data=self.grouppurchase_update_data_meeting_fail,
-    #         HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-    #     )
-    #     self.assertEqual(response.status_code, 400)
+    def test_update_grouppurchase_feed(self):
+        """공구 게시글 수정 실패, close시간"""
+        response = self.client.post(
+            path=self.path,
+            data=self.grouppurchase_update_data_close_fail,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.message, "현재보다 이후의 시점을 선택해주세요.")
+        self.assertEqual(response.status_code, 400)
+
+    def test_update_grouppurchase_feed(self):
+        """공구 게시글 수정 실패, meeting시간"""
+        response = self.client.post(
+            path=self.path,
+            data=self.grouppurchase_update_data_meeting_fail,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 400)
 
     def test_delete_grouppurchase_feed(self):
         """공구 게시글 권한없는 유저 삭제 실패"""
@@ -1073,19 +1086,19 @@ class GroupPurchaseViewTest(APITestCase):
         )
         self.assertEqual(response.status_code, 405)
 
-    # def test_get_grouppurchase_feed_liset(self):
-    #     """공구 게시글 list get, 로그인 없이"""
-    #     response = self.client.get(
-    #         path=self.path4,
-    #     )
-    #     self.assertEqual(response.status_code, 200)
+    def test_get_grouppurchase_feed_liset(self):
+        """공구 게시글 list get, 로그인 없이"""
+        response = self.client.get(
+            path=self.path4,
+        )
+        self.assertEqual(response.status_code, 200)
 
-    # def test_get_grouppurchase_feed_detail(self):
-    #     """공구 게시글 상세 get, 로그인 없이"""
-    #     response = self.client.get(
-    #         path=self.path5,
-    #     )
-    #     self.assertEqual(response.status_code, 200)
+    def test_get_grouppurchase_feed_detail(self):
+        """공구 게시글 상세 get, 로그인 없이"""
+        response = self.client.get(
+            path=self.path5,
+        )
+        self.assertEqual(response.status_code, 200)
 
     def test_post_grouppurchase_join_success(self):
         """공구 게시글 참여 성공"""
@@ -1129,6 +1142,7 @@ class GroupPurchaseViewTest(APITestCase):
             data=self.join_data_1,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
         )
+        self.assertEqual(response.data["message"], "수량을 다시 확인해주세요.")
         self.assertEqual(response.status_code, 400)
 
     def test_post_grouppurchase_limit(self):
@@ -1223,6 +1237,25 @@ class GroupPurchaseViewTest(APITestCase):
     def test_update_comment_no_user(self):
         response = self.client.put(path=self.path10, data=self.purchase_comment_data2)
         self.assertEqual(response.status_code, 401)
+
+    def test_update_comment_no_text(self):
+        response = self.client.put(
+            path=self.path11,
+            data={
+                "text": "",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_update_grouppurchase_comment_not_matched_user(self):
+        """공구 게시글 comment 수정 실패, 권한없는 유저"""
+        response = self.client.put(
+            path=self.path11,
+            data=self.purchase_comment_data2,
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token3}",
+        )
+        self.assertEqual(response.status_code, 403)
 
     def test_update_comment_no_text(self):
         response = self.client.put(

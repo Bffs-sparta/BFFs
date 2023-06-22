@@ -25,6 +25,7 @@ urlpatterns = (
         path("user/", include("user.urls")),
         path("community/", include("community.urls")),
         path("feed/", include("feed.urls")),
+        path("meetai/", include("meetai.urls")),
     ]
     + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
