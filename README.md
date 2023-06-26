@@ -5,7 +5,7 @@
 </div>
 
 <div align="center">
-  <h2 style="color:#9E2067;">Best Friend Forever Web Page</h2>
+  <h2>👭 Best Friend Forever Web Page</h2>
   <p>내일 배움 캠프 최종 프로젝트</p>
     <dl>
       <dd>개발기간 :</dd>
@@ -114,7 +114,7 @@
 </div>
 
 <div align="center">
-  <h2>Bff's notion</h2>
+  <h2>🍃 Bff's notion</h2>
   <a href="https://www.notion.so/792305265dde4ce5ac1844ecdba2a004?v=768e361ff318463dba242320ef318a0a" target="_blank">
     <img src="https://img.shields.io/badge/notion-000000?style=for-the-badge&logo=notion&logoColor=white">
   </a>
