@@ -132,7 +132,7 @@
 <div align="center">
   <div>
       <dl>
-        <a href="https://api.makebestie.com/" style="text-decoration-line: none";>
+        <a href="https://makebestie.com/" style="text-decoration-line: none";>
           <img src="https://ifh.cc/g/gw8rYq.png" alt="bff_fe logo">
           <dt>bffs frontend</dt>
         </a>
@@ -140,7 +140,7 @@
   </div>
   <div>
     <dl display="flex">
-      <a href="https://makebestie.com/" text-decoration-line: none;>
+      <a href=href="https://api.makebestie.com/" text-decoration-line: none;>
         <img src="https://ifh.cc/g/vato5z.png" alt="bff_be logo">
         <dt>bffs backend</dt>
       </a>
