@@ -140,7 +140,7 @@
   </div>
   <div>
     <dl display="flex">
-      <a href=href="https://api.makebestie.com/" text-decoration-line: none;>
+      <a href="https://api.makebestie.com/" text-decoration-line: none;>
         <img src="https://ifh.cc/g/vato5z.png" alt="bff_be logo">
         <dt>bffs backend</dt>
       </a>
