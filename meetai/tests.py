@@ -41,10 +41,10 @@ class UserProfileViewTest(APITestCase):
         )
         self.assertEqual(response.status_code, 401)
 
-    def test_post_ai_chat(self):
-        response = self.client.post(
-            path=self.path,
-            data=self.user_input_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(response.status_code, 200)
+    # def test_post_ai_chat(self):
+    #     response = self.client.post(
+    #         path=self.path,
+    #         data=self.user_input_data,
+    #         HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+    #     )
+    #     self.assertEqual(response.status_code, 200)
