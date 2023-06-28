@@ -66,7 +66,7 @@ class FeedViewTest(APITestCase):
         response = self.client.get(
             path=self.category_path,
         )
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 200)
 
 
 class FeedDetailViewTest(APITestCase):

@@ -97,8 +97,12 @@ WSGI_APPLICATION = "BFFs.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql" if config("POSTGRES_DB") else "django.db.backends.sqlite3",
+        "NAME": config("POSTGRES_DB") if config("POSTGRES_DB") else os.path.join(BASE_DIR, "db.sqlite3"),
+        "USER": config("POSTGRES_USER", default=""),
+        "PASSWORD": config("POSTGRES_PASSWORD", default=""),
+        "HOST": config("POSTGRES_HOST", default=""),
+        "PORT": config("POSTGRES_PORT", default="", cast=int),
     }
 }
 
@@ -199,7 +203,7 @@ EMAIL_HOST_PASSWORD = config("EMAIL_PASSWORD")
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-BROKER_URL = "amqp://guest:guest@localhost:5672//"
+BROKER_URL = "amqp://rabbitmq:5672//"
 
 # Celery 설정
 CELERY_BROKER_URL = BROKER_URL
@@ -210,6 +214,10 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Asia/Seoul"
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080",
-    "http://127.0.0.1:8000",
+    "https://makebestie.com",
+    "https://api.makebestie.com",
 ]
+
+CORS_ORIGIN_WHITELIST = ['http://13.125.60.48']
+
+CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST

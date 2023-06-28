@@ -5,7 +5,12 @@ from rest_framework.views import APIView
 from django.db import transaction
 from rest_framework.pagination import PageNumberPagination
 from community.models import Community, CommunityAdmin
-from community.serializers import CommunityAdminSerializer
+from community.serializers import (
+    CommunityUrlSerializer,
+    CommunityAdminSerializer,
+    CommunityCreateSerializer,
+    CommunityCategorySerializer,
+)
 from decouple import config
 from collections import OrderedDict
 from feed.models import (
@@ -34,7 +39,6 @@ from feed.serializers import (
     JoinedUserSerializer,
     GroupPurchaseCommentSerializer,
 )
-from community.serializers import CommunityUrlSerializer
 import math
 
 
@@ -204,10 +208,10 @@ class FeedCategoryListView(APIView):
     pagination_class = CustomPagination()
 
     def get(self, request, community_url, category_url):
-        community_introduction = get_object_or_404(
-            Community, communityurl=community_url
-        ).introduction
-        community_title = get_object_or_404(Community, communityurl=community_url).title
+        community_category = get_object_or_404(Community, communityurl=community_url)
+        category_serializer = CommunityCategorySerializer(community_category)
+        community_title = get_object_or_404(Community, communityurl=community_url)
+        community_serializer = CommunityCreateSerializer(community_title)
         category_name = (
             Category.objects.filter(
                 community__communityurl=community_url, category_url=category_url
@@ -221,7 +225,12 @@ class FeedCategoryListView(APIView):
         ).order_by("-created_at")
         if not feed_list:
             return Response(
-                {"message": "아직 카테고리 게시글이 없습니다."}, status=status.HTTP_204_NO_CONTENT
+                {
+                    "community": community_serializer.data,
+                    "category_name": category_name,
+                    "categories": category_serializer.data,
+                },
+                status=status.HTTP_200_OK,
             )
         else:
             paginated_feed_list = self.pagination_class.paginate_queryset(
@@ -233,9 +242,9 @@ class FeedCategoryListView(APIView):
             )
             return Response(
                 {
-                    "community_title": community_title,
+                    "community": community_serializer.data,
                     "category_name": category_name,
-                    "introduction": community_introduction,
+                    "categories": category_serializer.data,
                     "feed": pagination_serializer.data,
                 },
                 status=status.HTTP_200_OK,
