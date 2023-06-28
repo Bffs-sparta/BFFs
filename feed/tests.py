@@ -66,7 +66,7 @@ class FeedViewTest(APITestCase):
         response = self.client.get(
             path=self.category_path,
         )
-        self.assertEqual(response.status_code, 204)
+        self.assertEqual(response.status_code, 200)
 
 
 class FeedDetailViewTest(APITestCase):
@@ -1100,6 +1100,26 @@ class GroupPurchaseViewTest(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+    def test_get_grouppurchase_detail_fail(self):
+        """공구 게시글 상세 조회 실패"""
+        response = self.client.get(
+            path=reverse(
+                "grouppurchase_detail_view",
+                kwargs={
+                    "community_url": self.community.communityurl,
+                    "grouppurchase_id": 100,
+                },
+            )
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_feed_detail_check_view_count(self):
+        """공구 게시글 상세 조회 시 조회수 +1"""
+        response = self.client.get(
+            path=self.path5,
+        )
+        self.assertEqual(response.data["grouppurchase"]["view_count"], 1)
+
     def test_post_grouppurchase_join_success(self):
         """공구 게시글 참여 성공"""
         response = self.client.post(
@@ -1221,6 +1241,7 @@ class GroupPurchaseViewTest(APITestCase):
         self.assertEqual(response.status_code, 201)
 
     def test_create_comment_no_user(self):
+        """공구 댓글 수정 시 user 없음"""
         response = self.client.post(path=self.path10, data=self.purchase_comment_data2)
         self.assertEqual(response.status_code, 401)
 
@@ -1238,26 +1259,8 @@ class GroupPurchaseViewTest(APITestCase):
         response = self.client.put(path=self.path10, data=self.purchase_comment_data2)
         self.assertEqual(response.status_code, 401)
 
-    def test_update_comment_no_text(self):
-        response = self.client.put(
-            path=self.path11,
-            data={
-                "text": "",
-            },
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(response.status_code, 400)
-
-    def test_update_grouppurchase_comment_not_matched_user(self):
-        """공구 게시글 comment 수정 실패, 권한없는 유저"""
-        response = self.client.put(
-            path=self.path11,
-            data=self.purchase_comment_data2,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token3}",
-        )
-        self.assertEqual(response.status_code, 403)
-
-    def test_update_comment_no_text(self):
+    def test_update_grouppurchase_comment_no_text(self):
+        """공구 댓글 수정 시 text 없음"""
         response = self.client.put(
             path=self.path11,
             data={

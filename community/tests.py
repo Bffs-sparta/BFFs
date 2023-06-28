@@ -71,6 +71,45 @@ class CommunityViewTest(APITestCase):
         )
         self.assertEqual(response.status_code, 400)
 
+    def test_post_community_title_check(self):
+        """커뮤니티 생성시 title 공백 확인"""
+        response = self.client.post(
+            path=self.path,
+            data={
+                "title": "title 1",
+                "communityurl": "title1",
+                "introduction": "introduction1",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_community_communityurl_check(self):
+        """커뮤니티 생성시 communityurl 공백 확인"""
+        response = self.client.post(
+            path=self.path,
+            data={
+                "title": "title1",
+                "communityurl": "title 1",
+                "introduction": "introduction1",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_community_communityurl_check2(self):
+        """커뮤니티 생성시 communityurl 확인"""
+        response = self.client.post(
+            path=self.path,
+            data={
+                "title": "title1",
+                "communityurl": "커뮤니티영어이름",
+                "introduction": "introduction1",
+            },
+            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+        )
+        self.assertEqual(response.status_code, 400)
+
     def test_post_community(self):
         """커뮤니티 생성 성공"""
         response = self.client.post(
@@ -184,11 +223,11 @@ class CommunitySubAdminViewTest(APITestCase):
             "name": "test5",
             "password": "test123!",
         }
-        cls.user = User.objects.create_user("test1@naver.com", "test1", "test123!")
-        cls.user2 = User.objects.create_user("test2@naver.com", "test2", "test123!")
-        cls.user3 = User.objects.create_user("test3@naver.com", "test3", "test123!")
-        cls.user4 = User.objects.create_user("test4@naver.com", "test4", "test123!")
-        cls.user5 = User.objects.create_user("test5@naver.com", "test5", "test123!")
+        cls.user = User.objects.create_user(id=1, **cls.user_data)
+        cls.user2 = User.objects.create_user(id=2, **cls.user_data2)
+        cls.user3 = User.objects.create_user(id=3, **cls.user_data3)
+        cls.user4 = User.objects.create_user(id=4, **cls.user_data4)
+        cls.user5 = User.objects.create_user(id=5, **cls.user_data5)
         cls.community = Community.objects.create(
             title="title1", communityurl="title1", introduction="introduction1"
         )

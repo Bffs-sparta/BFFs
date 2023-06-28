@@ -1,8 +1,9 @@
+import re
 from rest_framework import serializers
 from decouple import config
 
 from user.models import User
-from feed.models import Feed
+from feed.models import Feed, Category
 from feed.serializers import FeedTitleSerializer
 from .models import Community, CommunityAdmin, ForbiddenWord
 from .validators import can_only_eng_and_int
@@ -74,7 +75,8 @@ class CommunityCategorySerializer(serializers.ModelSerializer):
     def get_categories(self, obj):
         categories = obj.community_category.all()
         category_name_list = [
-            [category.id, category.category_name] for category in categories
+            [category.id, category.category_name, category.category_url]
+            for category in categories
         ]
         return category_name_list
 
@@ -97,10 +99,20 @@ class CommunityCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         title = validated_data.get("title")
         communityurl = validated_data.get("communityurl")
+        if " " in title:
+            raise serializers.ValidationError("커뮤니티 이름은 공백 없이 작성가능합니다.")
+        if not re.match(r"^[a-zA-Z0-9가-힣]+$", title):
+            raise serializers.ValidationError("커뮤니티 이름은 특수문자를 사용할 수 없습니다.")
+        if " " in communityurl:
+            raise serializers.ValidationError("커뮤니티 영어 이름은 공백 없이 작성가능합니다.")
+        if not can_only_eng_and_int(communityurl):
+            raise serializers.ValidationError(
+                "커뮤니티 영어 이름은 영어와 숫자로 5글자 이상인 경우에 작성가능합니다."
+            )
         if Community.objects.filter(title=title).exists():
             raise serializers.ValidationError("이미 존재하는 커뮤니티 이름입니다.")
-        if not can_only_eng_and_int(communityurl):
-            raise serializers.ValidationError("커뮤니티url은 영어와 숫자로 5글자 이상인 경우에 작성가능합니다.")
+        if Community.objects.filter(communityurl=communityurl).exists():
+            raise serializers.ValidationError("이미 존재하는 커뮤니티 영어 이름입니다.")
 
         introduction = validated_data.get("introduction")
         image = validated_data.get("image")
@@ -111,6 +123,12 @@ class CommunityCreateSerializer(serializers.ModelSerializer):
             introduction=introduction,
             image=image,
         )
+        category_data1 = {"id": 1, "category_name": "얘기해요", "category_url": "talk"}
+        category_data2 = {"id": 2, "category_name": "모집해요", "category_url": "join"}
+        category_data3 = {"id": 3, "category_name": "공구해요", "category_url": "groupbuy"}
+        Category.objects.create(community=community, **category_data1)
+        Category.objects.create(community=community, **category_data2)
+        Category.objects.create(community=community, **category_data3)
         return community
 
     def get_imageurl(self, obj):

@@ -2,6 +2,7 @@ from datetime import datetime
 from rest_framework import serializers
 from rest_framework.response import Response
 
+from community.models import Community
 from feed.models import (
     Category,
     Comment,
@@ -49,13 +50,15 @@ class CocommentSerializer(serializers.ModelSerializer):
         }
 
     def get_nickname(self, obj):
-        return Profile.objects.get(id=obj.user_id).nickname
+        return Profile.objects.get(user=obj.user).nickname
 
     def get_user_id(self, obj):
         return Profile.objects.get(user=obj.user).id
 
 
 class CommentCreateSerializer(serializers.ModelSerializer):
+    """댓글 생성 serializer"""
+
     class Meta:
         model = Comment
         fields = [
@@ -103,6 +106,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class FeedTitleSerializer(serializers.ModelSerializer):
+    """feed 제목 serializer"""
+
     class Meta:
         model = Feed
         fields = [
@@ -114,10 +119,13 @@ class FeedTitleSerializer(serializers.ModelSerializer):
 
 
 class FeedListSerializer(serializers.ModelSerializer):
+    """feed 리스트 serializer"""
+
     nickname = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
     comments_count = serializers.SerializerMethodField()
     likes_count = serializers.SerializerMethodField()
+    community_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Feed
@@ -134,6 +142,7 @@ class FeedListSerializer(serializers.ModelSerializer):
             "comments_count",
             "likes_count",
             "is_notification",
+            "community_name",
         ]
 
     def get_nickname(self, obj):
@@ -149,6 +158,11 @@ class FeedListSerializer(serializers.ModelSerializer):
 
     def get_likes_count(self, obj):
         return obj.likes.count()
+
+    def get_community_name(self, obj):
+        category = Category.objects.get(id=obj.category_id)
+        communityurl = Community.objects.get(title=category.community).communityurl
+        return communityurl
 
 
 class FeedCreateSerializer(serializers.ModelSerializer):
@@ -239,11 +253,11 @@ class FeedNotificationSerializer(serializers.ModelSerializer):
             "is_notification",
         ]
 
-    # is_admin여부를 확인해 공지글로 바꾸어줄 수 있도록 구현
     def post_is_notification(self, obj, community, request):
-        if obj.is_notification == False:
+        """공지 field 상태 check"""
+        if not obj.is_notification:
             return False
-        elif obj.is_notification == True:
+        elif obj.is_notification:
             return True
 
 
@@ -268,27 +282,28 @@ class GroupPurchaseListSerializer(serializers.ModelSerializer):
         ]
 
     def get_grouppurchase_status(self, obj):
+        """공구 게시글 상태 check"""
         now = datetime.now()
         is_ended = obj.is_ended
         open_at = datetime.strptime(str(obj.open_at), "%Y-%m-%d %H:%M:%S")
         if not obj.close_at:
-            if is_ended == True:
+            if is_ended:
                 return "종료"
-            elif is_ended == False and open_at > now:
+            elif not is_ended and open_at > now:
                 return "시작 전"
-            elif is_ended == False and open_at < now:
+            elif not is_ended and open_at < now:
                 return "진행 중"
 
         else:
             close_at = datetime.strptime(str(obj.close_at), "%Y-%m-%d %H:%M:%S")
-            if is_ended == True:
+            if is_ended:
                 return "종료"
             elif close_at < now:
                 # cron 작동 안했을 경우에도 종료 시간에따라 종료를 띄워주기
                 return "종료"
-            elif is_ended == False and open_at > now:
+            elif not is_ended and open_at > now:
                 return "시작 전"
-            elif close_at and is_ended == False and close_at > now and open_at < now:
+            elif close_at and not is_ended and close_at > now and open_at < now:
                 return "진행 중"
 
 
@@ -302,27 +317,27 @@ class GroupPurchaseDetailSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def get_grouppurchase_status(self, obj):
+        """공구 게시글 상태 check"""
         now = datetime.now()
         is_ended = obj.is_ended
         open_at = datetime.strptime(str(obj.open_at), "%Y-%m-%d %H:%M:%S")
         if not obj.close_at:
-            if is_ended == True:
+            if is_ended:
                 return "종료"
-            elif is_ended == False and open_at > now:
+            elif not is_ended and open_at > now:
                 return "시작 전"
-            elif is_ended == False and open_at < now:
+            elif not is_ended and open_at < now:
                 return "진행 중"
-
         else:
             close_at = datetime.strptime(str(obj.close_at), "%Y-%m-%d %H:%M:%S")
-            if is_ended == True:
+            if is_ended:
                 return "종료"
             elif close_at < now:
                 # cron 작동 안했을 경우에도 종료 시간에따라 종료를 띄워주기
                 return "종료"
-            elif is_ended == False and open_at > now:
+            elif not is_ended and open_at > now:
                 return "시작 전"
-            elif close_at and is_ended == False and close_at > now and open_at < now:
+            elif close_at and not is_ended and close_at > now and open_at < now:
                 return "진행 중"
 
 
@@ -352,6 +367,7 @@ class GroupPurchaseCreateSerializer(serializers.ModelSerializer):
         }
 
     def validate_datetime(self, data):
+        """공구 create 시 시간유효성 validate"""
         now = datetime.now()
         open_at = datetime.strptime(data.get("open_at"), "%Y-%m-%dT%H:%M:%S")
         close_at = datetime.strptime(data.get("close_at"), "%Y-%m-%dT%H:%M:%S")
@@ -365,6 +381,7 @@ class GroupPurchaseCreateSerializer(serializers.ModelSerializer):
         return data
 
     def validate_datetime_update(self, data):
+        """공구 update 시 시간유효성 validate"""
         now = datetime.now()
         open_at = datetime.strptime(data.get("open_at"), "%Y-%m-%dT%H:%M:%S")
         close_at = datetime.strptime(data.get("close_at"), "%Y-%m-%dT%H:%M:%S")
@@ -377,6 +394,8 @@ class GroupPurchaseCreateSerializer(serializers.ModelSerializer):
 
 
 class JoinedUserCreateSerializer(serializers.ModelSerializer):
+    """공구 참여유저 생성 serializer"""
+
     class Meta:
         model = JoinedUser
         fields = [
@@ -391,6 +410,8 @@ class JoinedUserCreateSerializer(serializers.ModelSerializer):
 
 
 class JoinedUserSerializer(serializers.ModelSerializer):
+    """공구 참여유저 serializer"""
+
     class Meta:
         model = JoinedUser
         fields = "__all__"
