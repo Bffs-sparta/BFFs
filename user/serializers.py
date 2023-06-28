@@ -42,8 +42,6 @@ class UserSerializer(serializers.ModelSerializer):
         )
         extra_kwargs = {"password": {"write_only": True}}
 
-
-
 class UserProfileSerializer(serializers.ModelSerializer):
     profileimageurl = serializers.SerializerMethodField()
     user_name = serializers.SerializerMethodField()

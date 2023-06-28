@@ -17,8 +17,9 @@ from django.contrib.auth.views import PasswordResetConfirmView
 from rest_framework import permissions, status, filters
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
-
+from rest_framework_simplejwt.views import TokenViewBase
+from rest_framework_simplejwt.settings import api_settings
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from .models import User, Profile, GuestBook, Verify
 from .serializers import (
     UserCreateSerializer,
@@ -62,9 +63,7 @@ class SendEmailView(APIView):
                 code = get_random_string(length=6)
                 verifymail.delay(email, code)
                 Verify.objects.create(email=email, code=code)
-                return Response({"code": code}, status=status.HTTP_200_OK)  # 테스트용
-
-                # return Response({'success':'success'},status=status.HTTP_200_OK)
+                return Response({"msg": "인증코드가 전송되었습니다"}, status=status.HTTP_200_OK)
 
 
 class VerificationEmailView(APIView):
@@ -98,12 +97,27 @@ class SignupView(APIView):
     def post(self, request):
         user_data = UserCreateSerializer(data=request.data)
         user_data.is_valid(raise_exception=True)
-        user = user_data.save()
+        user_data.save()
         # user 생성될때 profile 생성
         return Response({"msg": "회원가입이 완료되었습니다."}, status=status.HTTP_201_CREATED)
 
 
-class LoginView(TokenObtainPairView):
+class LoginView(TokenViewBase):
+    _serializer_class = api_settings.TOKEN_OBTAIN_SERIALIZER
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(
+            data=request.data, context={"request": request}
+        )
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as e:
+            raise InvalidToken(e.args[0])
+
+        return Response(serializer.validated_data, status=status.HTTP_200_OK)
+
+
+class LoginView(LoginView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
@@ -260,7 +274,6 @@ def socialLogin(**kwargs):
 
 def get_token(user):
     token = CustomTokenObtainPairSerializer.social_token(user)
-    print(token)
     callback_url = f"{config('FRONTEND_URL')}/callback?access_token={token.get('access')}&refresh_token={token.get('refresh')}"
     return redirect(callback_url)
 
@@ -383,6 +396,8 @@ class GuestBookDetailView(APIView):
 
 
 class MyPasswordResetView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     def post(self, request):
         email = request.data.get("email")
         user = get_object_or_404(User, email=email)

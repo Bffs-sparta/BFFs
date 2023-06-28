@@ -172,7 +172,7 @@ class GroupPurchase(models.Model, HitCountMixin):
         """공구 제한 인원이 채워질 경우 공구 종료"""
         purchasefeed = GroupPurchase.objects.get(id=grouppurchase_id)
         if purchasefeed.joined_user is None:
-            print("아직 신청 인원이 없음")
+            # print("아직 신청 인원이 없음")
             return False
         else:
             joined = purchasefeed.joined_user.count()

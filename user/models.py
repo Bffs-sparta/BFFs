@@ -129,3 +129,12 @@ class PasswordReset(models.Model):
     email = models.EmailField()
     uuid = models.CharField(max_length=255)
     is_verify = models.BooleanField(default=False)
+
+
+class LoginLog(models.Model):
+    class Meta:
+        db_table = "login_log"
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    ip_address = models.GenericIPAddressField()
+    created_at = models.DateTimeField(auto_now_add=True)

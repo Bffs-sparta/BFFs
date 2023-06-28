@@ -27,4 +27,3 @@ class MyPurchaseCronJob(CronJobBase):
         end_grouppuchase = GroupPurchase.objects.filter(close_at__gte=now).update(
             is_ended=True
         )
-        # print("⭐️공구 마감⭐️")

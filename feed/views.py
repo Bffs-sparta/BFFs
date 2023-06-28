@@ -68,11 +68,11 @@ class CustomPagination(PageNumberPagination):
             if self.page.number >= self.page.paginator.num_pages - 1
             else self.page.number + 2
         )
-        response.data["last_page"] = self.page.paginator.num_pages
-        backend_url = config("BACKEND_URL")
+        url = config("BACKEND_URL")
         response.data["url"] = (
-            backend_url
-            + self.request.build_absolute_uri().split("?")[0].split("8000")[1]
+            url
+            + "/community"
+            + self.request.build_absolute_uri().split("?")[0].split("community")[1]
         )
         return response
 
@@ -569,7 +569,8 @@ class GroupPurchaseJoinedUserView(APIView):
             serializer.save(user=request.user, grouppurchase_id=grouppurchase_id)
             # save한 후 join인원 체크 및 마감여부 확인
             if purchasefeed.check_end_person_limit_point(grouppurchase_id):
-                print("⭐️공구 마감⭐️")
+                # print("⭐️공구 마감⭐️")
+                pass
             return Response(
                 {
                     "message": "공구를 신청했습니다.",

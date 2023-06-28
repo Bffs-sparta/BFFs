@@ -2,6 +2,7 @@ from django_cron import CronJobBase, Schedule
 from django.utils import timezone
 
 from .models import User
+from .tasks import information_email
 
 
 class MyCronJob(CronJobBase):
@@ -10,20 +11,20 @@ class MyCronJob(CronJobBase):
     code = "user.my_cron_job"
 
     def do(self):
-        six_months_ago = timezone.now() - timezone.timedelta(days=180)
+        eleven_months_ago = timezone.now() - timezone.timedelta(days=330)
         one_year_ago = timezone.now() - timezone.timedelta(days=365)
         five_years_ago = timezone.now() - timezone.timedelta(days=1825)
 
-        dormant_users = User.objects.filter(last_login__lt=one_year_ago).update(
-            is_dormant=True
+        User.objects.filter(last_login__lt=one_year_ago).update(is_dormant=True)
+        pre_dormants = User.objects.filter(
+            last_login__lt=eleven_months_ago, is_dormant=False
         )
-        if dormant_users:
-            for user in dormant_users:
-                pass
+        recipient_list = []
+        for pre_dormant in pre_dormants:
+            email = pre_dormant.email
+            recipient_list.append(email)
+        subject = "회원님의 계정이 1달뒤에 휴면계정 처리 될 예정입니다"
+        message = "회원님의 활동이 없어서 계정이 1달뒤에 휴면계정 처리가 될 예정입니다. 계정을 활성화 하시려면 로그인을 해주세요."
+        information_email.delay(subject, message, recipient_list)
 
         User.objects.filter(withdraw_at__lt=five_years_ago).delete()
-
-        user_pwd_expiry = User.objects.filter(change_password_at=six_months_ago)
-        if user_pwd_expiry:
-            for user in user_pwd_expiry:
-                pass

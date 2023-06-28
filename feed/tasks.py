@@ -13,7 +13,6 @@ def image_delete_job():
     for feed in feeds:
         content = feed.content
         image_tags = re.findall(r'<img.*?src="(.*?)".*?>', content)
-        print(image_tags)
         for image_tag in image_tags:
             image_name = image_tag.split("feed/")[1]
             used_image_url.append(image_name)
