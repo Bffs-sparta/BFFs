@@ -97,12 +97,12 @@ WSGI_APPLICATION = "BFFs.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql" if config("POSTGRES_DB") else "django.db.backends.sqlite3",
-        "NAME": config("POSTGRES_DB") if config("POSTGRES_DB") else os.path.join(BASE_DIR, "db.sqlite3"),
+        "ENGINE": "django.db.backends.postgresql" if config("POSTGRES_DB",default=False) else "django.db.backends.sqlite3",
+        "NAME": config("POSTGRES_DB") if config("POSTGRES_DB",default=False) else os.path.join(BASE_DIR, "db.sqlite3"),
         "USER": config("POSTGRES_USER", default=""),
         "PASSWORD": config("POSTGRES_PASSWORD", default=""),
         "HOST": config("POSTGRES_HOST", default=""),
-        "PORT": config("POSTGRES_PORT", default="", cast=int),
+        "PORT": config("POSTGRES_PORT", default=False, cast=int),
     }
 }
 
