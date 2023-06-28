@@ -86,7 +86,15 @@
         <img src="https://ifh.cc/g/hno3NY.png" alt="bff_CI/CD">
 </div>
 
-
+<div align="center">
+  <h2>🍃 Bff's notion</h2>
+  <a href="https://www.notion.so/792305265dde4ce5ac1844ecdba2a004?v=768e361ff318463dba242320ef318a0a" target="_blank">
+    <img src="https://img.shields.io/badge/notion-000000?style=for-the-badge&logo=notion&logoColor=white">
+  </a>
+  <a href="https://www.canva.com/design/DAFmmwfCZn0/pKTamb5AtYNPBIsMgtIhcg/edit?utm_content=DAFmmwfCZn0&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton" target="_blank">
+    <img src="https://img.shields.io/badge/canva-57B7C9?style=for-the-badge&logo=canva&logoColor=white">
+  </a>
+</div>
 
 
 <div align="center">
@@ -121,15 +129,6 @@
   <img src="https://img.shields.io/badge/githubactions-3A6FD7?style=for-the-badge&logo=githubactions&logoColor=white" "githubactions logo img"/>
 </div>
 
-<div align="center">
-  <h2>🍃 Bff's notion</h2>
-  <a href="https://www.notion.so/792305265dde4ce5ac1844ecdba2a004?v=768e361ff318463dba242320ef318a0a" target="_blank">
-    <img src="https://img.shields.io/badge/notion-000000?style=for-the-badge&logo=notion&logoColor=white">
-  </a>
-  <a href="https://www.canva.com/design/DAFmmwfCZn0/pKTamb5AtYNPBIsMgtIhcg/edit?utm_content=DAFmmwfCZn0&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton" target="_blank">
-    <img src="https://img.shields.io/badge/canva-57B7C9?style=for-the-badge&logo=canva&logoColor=white">
-  </a>
-</div>
 
 <div align="center">
   <h2>🏡 배포 주소</h2>
