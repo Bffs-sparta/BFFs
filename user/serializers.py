@@ -11,31 +11,24 @@ import os
 from decouple import config
 from django.shortcuts import get_object_or_404
 
+
+
 class UserCreateSerializer(serializers.ModelSerializer):
+    nickname = serializers.CharField()
+    region = serializers.CharField()
+
     class Meta:
-        fields = ("email", "name", "password")
+        fields = ("email", "name", "password", "nickname", "region")
         extra_kwargs = {"password": {"write_only": True}}
         model = User
+
     def create(self, validated_data):
-        user = User.objects.create_user(**validated_data)
-        return user
-
-# class UserCreateSerializer(serializers.ModelSerializer):
-#     nickname = serializers.CharField()
-#     region = serializers.CharField()
-
-#     class Meta:
-#         fields = ("email", "name", "password", "nickname", "region")
-#         extra_kwargs = {"password": {"write_only": True}}
-#         model = User
-
-#     def create(self, validated_data):
-#         verify = get_object_or_404(Verify, email=validated_data["email"])
-#         if verify:
-#             user = User.objects.create_user(**validated_data)
-#             return user
-#         else:
-#             raise serializers.ValidationError("이메일 인증을 완료 해주세요")
+        verify = get_object_or_404(Verify, email=validated_data["email"])
+        if verify:
+            user = User.objects.create_user(**validated_data)
+            return user
+        else:
+            raise serializers.ValidationError("이메일 인증을 완료 해주세요")
 
 
 class UserSerializer(serializers.ModelSerializer):
