@@ -76,7 +76,15 @@
   </ul>
 </div>
 
+<div align="center">
+  <h2>🌳 BFF ERD</h2>
+        <img src="https://ifh.cc/g/hno3NY.png](https://ifh.cc/g/RYrpzy.jpg" alt="bff_CI/CD">
+</div>
 
+<div align="center">
+  <h2>🌳 BFF CI/CD</h2>
+        <img src="https://ifh.cc/g/hno3NY.png" alt="bff_CI/CD">
+</div>
 
 
 
@@ -118,11 +126,9 @@
   <a href="https://www.notion.so/792305265dde4ce5ac1844ecdba2a004?v=768e361ff318463dba242320ef318a0a" target="_blank">
     <img src="https://img.shields.io/badge/notion-000000?style=for-the-badge&logo=notion&logoColor=white">
   </a>
-</div>
-
-<div align="center">
-  <h2>🌳 BFF CI/CD</h2>
-        <img src="https://ifh.cc/g/hno3NY.png" alt="bff_CI/CD">
+  <a href="https://www.canva.com/design/DAFmmwfCZn0/pKTamb5AtYNPBIsMgtIhcg/edit?utm_content=DAFmmwfCZn0&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton" target="_blank">
+    <img src="https://img.shields.io/badge/canva-57B7C9?style=for-the-badge&logo=canva&logoColor=white">
+  </a>
 </div>
 
 <div align="center">
