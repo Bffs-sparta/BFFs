@@ -151,7 +151,6 @@ class GroupPurchase(models.Model, HitCountMixin):
         on_delete=models.CASCADE,
         related_name="purchase_category",
         blank=False,
-        default=3,
     )
 
     # 조회수 코드
