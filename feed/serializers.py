@@ -236,6 +236,8 @@ class ProfileFeedSerializer(serializers.ModelSerializer):
     """feed 상세 serializer"""
 
     nickname = serializers.SerializerMethodField()
+    likes_count = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Feed
@@ -253,6 +255,11 @@ class ProfileFeedSerializer(serializers.ModelSerializer):
 
     def get_nickname(self, obj):
         return Profile.objects.get(user=obj.user).nickname
+
+    def get_comments_count(self, obj):
+        comment = obj.comment.count()
+        cocomment = Cocomment.objects.filter(comment__feed=obj).count()
+        return comment + cocomment
 
 
 class FeedNotificationSerializer(serializers.ModelSerializer):
@@ -322,6 +329,9 @@ class GroupPurchaseDetailSerializer(serializers.ModelSerializer):
     """공구 게시글 상세 serializer"""
 
     grouppurchase_status = serializers.SerializerMethodField()
+    joined_user = serializers.StringRelatedField(many=True)
+    joined_user_count = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
 
     class Meta:
         model = GroupPurchase
@@ -350,6 +360,16 @@ class GroupPurchaseDetailSerializer(serializers.ModelSerializer):
                 return "시작 전"
             elif close_at and not is_ended and close_at > now and open_at < now:
                 return "진행 중"
+
+    def get_joined_user(self, obj):
+        real_join = JoinedUser.objects.filter(user=obj.joined_user, is_deleted=False)
+        return real_join
+
+    def get_joined_user_count(self, obj):
+        return obj.joined_user.count()
+
+    def get_comment_count(self, obj):
+        return obj.p_comment.count()
 
 
 class GroupPurchaseCreateSerializer(serializers.ModelSerializer):
