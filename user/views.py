@@ -269,6 +269,7 @@ def get_token(user):
 
 
 class ProfileView(APIView):
+    """프로필 R view"""
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
@@ -278,6 +279,7 @@ class ProfileView(APIView):
 
 
 class ProfileDetailView(APIView):
+    """프로필 CU, user Delete view"""
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request, user_id):

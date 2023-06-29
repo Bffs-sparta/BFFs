@@ -97,12 +97,8 @@ WSGI_APPLICATION = "BFFs.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql" if config("POSTGRES_DB",default=False) else "django.db.backends.sqlite3",
-        "NAME": config("POSTGRES_DB") if config("POSTGRES_DB",default=False) else os.path.join(BASE_DIR, "db.sqlite3"),
-        "USER": config("POSTGRES_USER", default=""),
-        "PASSWORD": config("POSTGRES_PASSWORD", default=""),
-        "HOST": config("POSTGRES_HOST", default=""),
-        "PORT": config("POSTGRES_PORT", default=False, cast=int),
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
 
@@ -214,6 +210,6 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "Asia/Seoul"
 
 CORS_ALLOWED_ORIGINS = [
-    "https://makebestie.com",
-    "https://api.makebestie.com",
+    "http://localhost:8080",
+    "http://127.0.0.1:8000",
 ]
