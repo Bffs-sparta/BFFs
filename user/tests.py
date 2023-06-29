@@ -66,6 +66,7 @@ class UserProfileViewTest(APITestCase):
         response = self.client.delete(url, data=delete_data)
         self.assertEqual(response.status_code, 400)
 
+
 class GuestBookTest(APITestCase):
     @classmethod
     def setUpTestData(cls):
@@ -78,16 +79,14 @@ class GuestBookTest(APITestCase):
             "nickname": "unity",
             "introduction": "import unittest",
             "region": "seoul",
-        }    
+        }
         cls.comment_data = {
             "comment": "Wal, wal",
         }
         cls.comment_update_data = {
-
             "comment": "Wal, wal~",
         }
         cls.comment4_data = {
-
             "comment": "Wal, wal",
         }
         cls.user = User.objects.create_user(**cls.user_data)
@@ -95,46 +94,46 @@ class GuestBookTest(APITestCase):
         GuestBook.objects.create(
             user=cls.user, comment=cls.comment_data, profile_id=cls.user.id
         )
-        
+
     def setUp(self):
         self.access_token = self.client.post(reverse("login"), self.user_data).data[
             "access"
         ]
-        
-    #guestbook comment read    
+
+    # guestbook comment read
     def test_get_comment_view(self):
         response = self.client.get(
-            path = reverse("guestbook_view", kwargs={"profile_id":1})
+            path=reverse("guestbook_view", kwargs={"profile_id": 1})
         )
         self.assertEqual(response.status_code, 200)
-        
-    #guestbook comment create        
+
+    # guestbook comment create
     def test_create_comment_view(self):
         response = self.client.post(
-            path = reverse("guestbook_view", kwargs={"profile_id":1}), 
+            path=reverse("guestbook_view", kwargs={"profile_id": 1}),
             data=self.comment_data,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 200)
-        
-    #guestbook comment update   
+
+    # guestbook comment update
     def test_create_comment_view(self):
         response = self.client.post(
-            path = reverse("guestbook_view", kwargs={"profile_id":1}), 
+            path=reverse("guestbook_view", kwargs={"profile_id": 1}),
             data=self.comment_data,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 200)
-        
-    #guestbook comment delete
+
+    # guestbook comment delete
     def test_comment_delete_view(self):
         response = self.client.delete(
-            path = reverse("guestbook_detail_view", kwargs={"profile_id":1, "guestbook_id": 1}),
+            path=reverse(
+                "guestbook_detail_view", kwargs={"profile_id": 1, "guestbook_id": 1}
+            ),
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 204)
-        
-        
 
 
 class sendMailTest(APITestCase):
@@ -303,10 +302,11 @@ class loginTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_login_password_notMatch_5times(self):
-        test_user = {"email": "test@test.com", "password": "test1234@"}
+        test_user = {"email": "test@test.com", "password": "test1234@@"}
         self.user.login_count = 6
         self.user.save()
-        response = self.client.post(self.path, test_user)
+        self.client.post(self.path, test_user)
+        response = self.client.post(self.path, self.user_data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_login_user_notExist(self):

@@ -1,8 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser
-from django.core.validators import RegexValidator, FileExtensionValidator
-from django.core.exceptions import ValidationError
-import uuid
+from django.core.validators import RegexValidator
 
 
 class MyUserManager(BaseUserManager):
@@ -133,3 +131,12 @@ class PasswordReset(models.Model):
     email = models.EmailField()
     uuid = models.CharField(max_length=255)
     is_verify = models.BooleanField(default=False)
+
+
+class LoginLog(models.Model):
+    class Meta:
+        db_table = "login_log"
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    ip_address = models.GenericIPAddressField()
+    created_at = models.DateTimeField(auto_now_add=True)

@@ -152,7 +152,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "user.User"
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -199,7 +199,7 @@ EMAIL_HOST_PASSWORD = config("EMAIL_PASSWORD")
 EMAIL_USE_TLS = True
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-BROKER_URL = "amqp://guest:guest@localhost:5672//"
+BROKER_URL = "amqp://rabbitmq:5672//"
 
 # Celery 설정
 CELERY_BROKER_URL = BROKER_URL
@@ -213,3 +213,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8000",
 ]
+
+CORS_ORIGIN_WHITELIST = ['http://13.125.60.48']
+
+CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST

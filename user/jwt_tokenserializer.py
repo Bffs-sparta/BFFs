@@ -10,8 +10,7 @@ from rest_framework_simplejwt.serializers import (
     RefreshToken,
 )
 from rest_framework_simplejwt.settings import api_settings
-
-from .models import User
+from .models import User, LoginLog
 
 
 class CustomTokenObtainPairSerializer(TokenObtainSerializer):
@@ -40,26 +39,71 @@ class CustomTokenObtainPairSerializer(TokenObtainSerializer):
         self.target = get_object_or_404(User, email=attrs[self.username_field])
         if not api_settings.USER_AUTHENTICATION_RULE(self.user):
             if self.target:
-                self.target.login_count += 1
-                self.target.save()
+                if self.target.login_count < 5:
+                    self.target.login_count += 1
+                    self.target.save()
+                elif self.target.login_count >= 5:
+                    self.target.banned_at = timezone.now() + timedelta(minutes=5)
+                    self.target.save()
+                    raise serializers.ValidationError("5회 이상 로그인 실패로 5분간 로그인이 불가능합니다")
+
             raise serializers.ValidationError(
                 self.error_messages["no_active_account"],
                 "no_active_account",
             )
-        if self.target.banned_at and self.target.banned_at < timezone.now():
+
+        if self.target.is_withdraw:
+            if self.target.login_count < 1:
+                self.target.login_count += 1
+                self.target.save()
+                raise serializers.ValidationError("탈퇴한 회원입니다. 탈퇴를 취소하시려면 다시 로그인해주세요")
+            elif self.target.login_count > 1:
+                self.target.login_count = 1
+                self.target.save()
+                raise serializers.ValidationError("탈퇴한 회원입니다. 탈퇴를 취소하시려면 다시 로그인해주세요")
+            else:
+                self.target.is_withdraw = False
+                self.target.banned_at = None
+                self.target.login_count = 0
+                self.target.save()
+
+        elif self.target.is_dormant:
+            if self.target.login_count < 1:
+                self.target.login_count += 1
+                self.target.save()
+                raise serializers.ValidationError(
+                    "휴면계정으로 전환된 회원입니다. 계정을 활성화 하시려면 다시 로그인해주세요"
+                )
+            elif self.target.login_count > 1:
+                self.target.login_count = 1
+                self.target.save()
+                raise serializers.ValidationError(
+                    "휴면계정으로 전환된 회원입니다. 계정을 활성화 하시려면 다시 로그인해주세요"
+                )
+            else:
+                self.target.is_dormant = False
+                self.target.banned_at = None
+                self.target.login_count = 0
+                self.target.save()
+
+        if self.target.banned_at and self.target.banned_at > timezone.now():
+            raise serializers.ValidationError("5회 이상 로그인 실패로 5분간 로그인이 불가능합니다")
+        elif self.target.banned_at and self.target.banned_at < timezone.now():
             self.target.banned_at = None
             self.target.login_count = 0
             self.target.save()
 
-        if self.target.login_count > 5:
-            self.target.banned_at = timezone.now() + timedelta(minutes=5)
-            self.target.save()
-            raise serializers.ValidationError("5회 이상 로그인 실패로 5분간 로그인이 불가능합니다")
+        request = self.context.get("request")
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+        if x_forwarded_for:
+            ip_address = x_forwarded_for.split(",")[0]
+        else:
+            ip_address = request.META.get("REMOTE_ADDR")
 
-        if self.target.is_withdraw:
-            raise serializers.ValidationError("탈퇴한 회원입니다")
-        elif self.target.is_dormant:
-            raise serializers.ValidationError("휴면계정으로 전환된 회원입니다")
+        LoginLog.objects.create(user=self.target, ip_address=ip_address)
+
+        self.target.login_count = 0
+        self.target.save()
 
         refresh = self.get_token(self.user)
 

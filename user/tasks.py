@@ -24,3 +24,13 @@ def pwresetMail(email, reset_url):
         from_email="sender@example.com",
         recipient_list=[email],
     )
+
+
+@shared_task
+def information_email(subject, message, *recipient_list):
+    send_mail(
+        subject=subject,
+        message=message,
+        from_email=config("EMAIL"),
+        recipient_list=[*recipient_list],
+    )

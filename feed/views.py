@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db import transaction
 from rest_framework.pagination import PageNumberPagination
-from community.models import Community, CommunityAdmin
+from community.models import Community, CommunityAdmin, ForbiddenWord
 from community.serializers import (
     CommunityUrlSerializer,
     CommunityAdminSerializer,
@@ -68,8 +68,12 @@ class CustomPagination(PageNumberPagination):
             if self.page.number >= self.page.paginator.num_pages - 1
             else self.page.number + 2
         )
-        response.data["last_page"] = self.page.paginator.num_pages
-        response.data["url"] = self.request.build_absolute_uri().split("?")[0]
+        url = config("BACKEND_URL")
+        response.data["url"] = (
+            url
+            + "/community"
+            + self.request.build_absolute_uri().split("?")[0].split("community")[1]
+        )
         return response
 
 
@@ -211,7 +215,9 @@ class FeedCategoryListView(APIView):
         community_category = get_object_or_404(Community, communityurl=community_url)
         category_serializer = CommunityCategorySerializer(community_category)
         community_title = get_object_or_404(Community, communityurl=community_url)
-        community_serializer = CommunityCreateSerializer(community_title)
+        community_serializer = CommunityCreateSerializer(
+            community_title, context={"request": request}
+        )
         category_name = (
             Category.objects.filter(
                 community__communityurl=community_url, category_url=category_url
@@ -236,6 +242,8 @@ class FeedCategoryListView(APIView):
             paginated_feed_list = self.pagination_class.paginate_queryset(
                 feed_list, request
             )
+            notification_feed = feed_list.filter(is_notification=True)
+            notification_serializer = FeedListSerializer(notification_feed, many=True)
             serializer = FeedListSerializer(paginated_feed_list, many=True)
             pagination_serializer = self.pagination_class.get_paginated_response(
                 serializer.data
@@ -246,6 +254,7 @@ class FeedCategoryListView(APIView):
                     "category_name": category_name,
                     "categories": category_serializer.data,
                     "feed": pagination_serializer.data,
+                    "notification": notification_serializer.data,
                 },
                 status=status.HTTP_200_OK,
             )
@@ -330,9 +339,17 @@ class FeedCreateView(APIView):
 
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, category_id):  # testcomu
+    def post(self, request, category_id):
         serializer = FeedCreateSerializer(data=request.data)
         category = get_object_or_404(Category, id=category_id)
+        forbidden_word = ForbiddenWord.objects.filter(
+            community_id=category.community.id
+        ).values_list("word", flat=True)
+        for word in forbidden_word:
+            if word in request.data["content"] or word in request.data["title"]:
+                return Response(
+                    {"message": "금지어가 포함되어 있습니다"}, status=status.HTTP_400_BAD_REQUEST
+                )
         if serializer.is_valid():
             serializer.save(user=request.user, category=category)
             return Response({"message": "게시글이 작성되었습니다"}, status=status.HTTP_201_CREATED)
@@ -373,21 +390,29 @@ class FeedNotificationView(APIView):
                 {"message": "커뮤니티 관리자 권한이 없습니다"}, status=status.HTTP_403_FORBIDDEN
             )
 
-        serializer = FeedNotificationSerializer(feed, data=request.data)
-        is_notificated = serializer.post_is_notification(feed, community, request)
-        serializer.is_valid(raise_exception=True)
-        if is_notificated:
-            serializer.save(is_notification=False)
+        notification_count = Feed.objects.filter(
+            is_notification=True, category_id=feed.category_id
+        ).count()
+        if notification_count > 4:
             return Response(
-                {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
-                status=status.HTTP_200_OK,
+                {"message": "카테고리당 공지는 5개까지 가능합니다"}, status=status.HTTP_400_BAD_REQUEST
             )
-        else:  # False일 경우
-            serializer.save(is_notification=True)
-            return Response(
-                {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
-                status=status.HTTP_200_OK,
-            )
+        else:
+            serializer = FeedNotificationSerializer(feed, data=request.data)
+            is_notificated = serializer.post_is_notification(feed, community, request)
+            serializer.is_valid(raise_exception=True)
+            if is_notificated:
+                serializer.save(is_notification=False)
+                return Response(
+                    {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
+                    status=status.HTTP_200_OK,
+                )
+            else:  # False일 경우
+                serializer.save(is_notification=True)
+                return Response(
+                    {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
+                    status=status.HTTP_200_OK,
+                )
 
 
 class FeedSearchView(ListAPIView):
@@ -544,7 +569,7 @@ class GroupPurchaseJoinedUserView(APIView):
             serializer.save(user=request.user, grouppurchase_id=grouppurchase_id)
             # save한 후 join인원 체크 및 마감여부 확인
             if purchasefeed.check_end_person_limit_point(grouppurchase_id):
-                print("⭐️공구 마감⭐️")
+                pass
             return Response(
                 {
                     "message": "공구를 신청했습니다.",

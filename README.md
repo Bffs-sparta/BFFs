@@ -35,15 +35,15 @@
       커뮤니티 CRUD<br/>
       user Admin, 금지어<br/>
       검색 기능<br/>
-      페이지네이션<br/>
-      구글 소셜로그인<br/>
+      네이버 소셜로그인<br/>
     </dd>
     <dt>정승호(승파이더맨) - 부리더</dt>
     <dd>
       유저 담당<br/>
       회원가입<br/>
       이메일 인증<br/>
-      카카오, 네이버 소셜로그인<br/>
+      카카오, 구글 소셜로그인<br/>
+      페이지네이션<br/>
       비밀번호 변경<br/>
       휴면<br/>
     </dd>
@@ -76,9 +76,25 @@
   </ul>
 </div>
 
+<div align="center">
+  <h2>🌳 BFF ERD</h2>
+        <img src="https://ifh.cc/g/RYrpzy.jpg" alt="bff_CI/CD">
+</div>
 
+<div align="center">
+  <h2>🌳 BFF CI/CD</h2>
+        <img src="https://ifh.cc/g/hno3NY.png" alt="bff_CI/CD">
+</div>
 
-
+<div align="center">
+  <h2>🍃 Bff's notion</h2>
+  <a href="https://www.notion.so/792305265dde4ce5ac1844ecdba2a004?v=768e361ff318463dba242320ef318a0a" target="_blank">
+    <img src="https://img.shields.io/badge/notion-000000?style=for-the-badge&logo=notion&logoColor=white">
+  </a>
+  <a href="https://www.canva.com/design/DAFmmwfCZn0/pKTamb5AtYNPBIsMgtIhcg/edit?utm_content=DAFmmwfCZn0&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton" target="_blank">
+    <img src="https://img.shields.io/badge/canva-57B7C9?style=for-the-badge&logo=canva&logoColor=white">
+  </a>
+</div>
 
 
 <div align="center">
@@ -113,17 +129,6 @@
   <img src="https://img.shields.io/badge/githubactions-3A6FD7?style=for-the-badge&logo=githubactions&logoColor=white" "githubactions logo img"/>
 </div>
 
-<div align="center">
-  <h2>🍃 Bff's notion</h2>
-  <a href="https://www.notion.so/792305265dde4ce5ac1844ecdba2a004?v=768e361ff318463dba242320ef318a0a" target="_blank">
-    <img src="https://img.shields.io/badge/notion-000000?style=for-the-badge&logo=notion&logoColor=white">
-  </a>
-</div>
-
-<div align="center">
-  <h2>🌳 BFF CI/CD</h2>
-        <img src="https://ifh.cc/g/hno3NY.png" alt="bff_CI/CD">
-</div>
 
 <div align="center">
   <h2>🏡 배포 주소</h2>

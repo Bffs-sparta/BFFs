@@ -1,6 +1,5 @@
 from datetime import datetime
 from rest_framework import serializers
-from rest_framework.response import Response
 
 from community.models import Community
 from feed.models import (
@@ -188,8 +187,10 @@ class FeedDetailSerializer(serializers.ModelSerializer):
     likes_count = serializers.SerializerMethodField()
     likes = serializers.StringRelatedField(many=True)
     nickname = serializers.SerializerMethodField()
-    category = serializers.SerializerMethodField()
+    category_name = serializers.SerializerMethodField()
+    category_url = serializers.SerializerMethodField()
     like_bool = serializers.SerializerMethodField()
+    comments_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Feed
@@ -198,6 +199,8 @@ class FeedDetailSerializer(serializers.ModelSerializer):
             "id": {"read_only": True},
             "user": {"read_only": True},
             "nickname": {"read_only": True},
+            "category_name": {"read_only": True},
+            "category_url": {"read_only": True},
             "created_at": {"read_only": True},
             "updated_at": {"read_only": True},
             "likes": {"read_only": True},
@@ -210,8 +213,11 @@ class FeedDetailSerializer(serializers.ModelSerializer):
     def get_nickname(self, obj):
         return Profile.objects.get(user=obj.user).nickname
 
-    def get_category(self, obj):
+    def get_category_name(self, obj):
         return Category.objects.get(id=obj.category_id).category_name
+
+    def get_category_url(self, obj):
+        return Category.objects.get(id=obj.category_id).category_url
 
     def get_like_bool(self, obj):
         request = self.context.get("request")
@@ -219,6 +225,11 @@ class FeedDetailSerializer(serializers.ModelSerializer):
             return True
         else:
             return False
+
+    def get_comments_count(self, obj):
+        comment = obj.comment.count()
+        cocomment = obj.comment.prefetch_related("cocomment").count()
+        return comment + cocomment
 
 
 class ProfileFeedSerializer(serializers.ModelSerializer):

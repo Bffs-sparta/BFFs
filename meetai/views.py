@@ -40,9 +40,9 @@ def send_text(request, user_input, ai_chat):
         model="gpt-3.5-turbo",
         max_tokens=300,
         messages=gpt_prompt,
-        temperature=0.5,
+        temperature=1,
         top_p=1,
-        presence_penalty=1,
+        presence_penalty=1.2,
     )
     # json response에서 필요한 부분만 불러옴
 
@@ -74,7 +74,6 @@ class SendTextView(APIView):
             second_hello_text = "안녕! 다시 만나서 반가워:D"
             response = send_text(request, user_input, second_hello_text)
         else:
-            # print(user_chat.ai_text[0], "⭐️")
             response = send_text(request, user_input, user_chat.ai_text[0])
 
         # 유저 데이터에 저장 및 채팅 내용 저장해주기
@@ -105,7 +104,6 @@ class SendTextView(APIView):
                 "user_text": user_chat.user_text[:10],
                 "ai_text": user_chat.ai_text[:10],
             }
-            # print("⭐️⭐️", new_data_set)
             serializer = AiChatBotSerailizer(user_chat, data=new_data_set)
             serializer.is_valid(raise_exception=True)
             serializer.save(user=request.user)
