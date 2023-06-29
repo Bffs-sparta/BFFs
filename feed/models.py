@@ -25,8 +25,6 @@ class Feed(models.Model, HitCountMixin):
     )
     title = models.CharField(max_length=50)
     content = models.TextField(blank=True)
-    image = models.ImageField(upload_to="media/photo/%Y/%m/%d", null=True, blank=True)
-    video = models.FileField(upload_to="media/video/%Y/%m/%d", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     likes = models.ManyToManyField(
@@ -121,7 +119,7 @@ class GroupPurchase(models.Model, HitCountMixin):
     product_number = models.PositiveIntegerField(default=0, help_text="구매 예상 수량")
     product_price = models.PositiveIntegerField(help_text="전체 금액")
     # product_division_price = models.PositiveIntegerField(help_text="전체 금액/구매 인원수")
-    link = models.URLField(max_length=300, null=True, help_text="어떤 물건인지 링크 넣어주기")
+    link = models.URLField(max_length=500, null=True, help_text="어떤 물건인지 링크 넣어주기")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_ended = models.BooleanField(default=False, help_text="공구 끝내기")
@@ -155,6 +153,9 @@ class GroupPurchase(models.Model, HitCountMixin):
 
     # 조회수 코드
     view_count = models.PositiveIntegerField(default=0)
+
+    def get_end_option_display(self, obj):
+        return dict(self.END_CHOICES).get(self.end_option)
 
     def click(self):
         self.view_count += 1

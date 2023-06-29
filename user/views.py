@@ -63,7 +63,7 @@ class SendEmailView(APIView):
                 code = get_random_string(length=6)
                 verifymail.delay(email, code)
                 Verify.objects.create(email=email, code=code)
-                return Response({"msg": "인증코드가 전송되었습니다"}, status=status.HTTP_200_OK)
+                return Response({"message": "인증코드가 전송되었습니다"}, status=status.HTTP_200_OK)
 
 
 class VerificationEmailView(APIView):
@@ -85,7 +85,7 @@ class VerificationEmailView(APIView):
             if verify:
                 verify.is_verify = True
                 verify.save()
-                return Response({"msg": "메일인증이 완료되었습니다"}, status=status.HTTP_200_OK)
+                return Response({"message": "메일인증이 완료되었습니다"}, status=status.HTTP_200_OK)
             else:
                 return Response(
                     {"error": "이메일이나 인증코드가 인증 코드가 틀렸습니다"},
@@ -99,7 +99,7 @@ class SignupView(APIView):
         user_data.is_valid(raise_exception=True)
         user_data.save()
         # user 생성될때 profile 생성
-        return Response({"msg": "회원가입이 완료되었습니다."}, status=status.HTTP_201_CREATED)
+        return Response({"message": "회원가입이 완료되었습니다."}, status=status.HTTP_201_CREATED)
 
 
 class LoginView(TokenViewBase):
@@ -283,6 +283,7 @@ def get_token(user):
 
 class ProfileView(APIView):
     """프로필 R view"""
+
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
@@ -293,6 +294,7 @@ class ProfileView(APIView):
 
 class ProfileDetailView(APIView):
     """프로필 CU, user Delete view"""
+
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request, user_id):

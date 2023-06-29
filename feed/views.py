@@ -348,7 +348,8 @@ class FeedCreateView(APIView):
         for word in forbidden_word:
             if word in request.data["content"] or word in request.data["title"]:
                 return Response(
-                    {"message": "금지어가 포함되어 있습니다"}, status=status.HTTP_400_BAD_REQUEST
+                    {"message": f"금지어 '{word}' 가 포함되어 있습니다"},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
         if serializer.is_valid():
             serializer.save(user=request.user, category=category)
@@ -404,13 +405,13 @@ class FeedNotificationView(APIView):
             if is_notificated:
                 serializer.save(is_notification=False)
                 return Response(
-                    {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
+                    {"data": serializer.data, "message": "공지가 취소되었습니다"},
                     status=status.HTTP_200_OK,
                 )
             else:  # False일 경우
                 serializer.save(is_notification=True)
                 return Response(
-                    {"data": serializer.data, "message": "게시글 상태가 변경되었습니다"},
+                    {"data": serializer.data, "message": "공지가 등록되었습니다"},
                     status=status.HTTP_200_OK,
                 )
 
@@ -431,6 +432,17 @@ class GroupPurchaseCreateView(APIView):
     """공구 게시글 생성 view"""
 
     permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, community_url):
+        community = get_object_or_404(Community, communityurl=community_url)
+        category = get_object_or_404(
+            Category, community=community, category_url="groupbuy"
+        )
+        grouppruchase = GroupPurchase.objects.filter(
+            community_id=community.id, category_id=category.id
+        )
+        serializer = GroupPurchaseCreateSerializer(grouppruchase, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, community_url):
         serializer = GroupPurchaseCreateSerializer(data=request.data)
