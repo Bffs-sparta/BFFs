@@ -282,6 +282,7 @@ def get_token(user):
 
 
 class ProfileView(APIView):
+    """프로필 R view"""
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
@@ -291,6 +292,7 @@ class ProfileView(APIView):
 
 
 class ProfileDetailView(APIView):
+    """프로필 CU, user Delete view"""
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get(self, request, user_id):
@@ -383,8 +385,8 @@ class GuestBookDetailView(APIView):
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=status.HTTP_200_OK)
-            else:
-                return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
 
     def delete(self, request, profile_id, guestbook_id):
         comment = GuestBook.objects.get(id=guestbook_id)

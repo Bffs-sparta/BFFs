@@ -31,7 +31,7 @@ def send_text(request, user_input, ai_chat):
     gpt_prompt.append(
         {
             "role": "assistant",
-            "content": f"{ai_chat}",
+            "content": f"{ai_chat}"[:50],
         }
     )
 
@@ -40,9 +40,9 @@ def send_text(request, user_input, ai_chat):
         model="gpt-3.5-turbo",
         max_tokens=300,
         messages=gpt_prompt,
-        temperature=1,
+        temperature=0.8,
         top_p=1,
-        presence_penalty=1.2,
+        presence_penalty=1,
     )
     # json response에서 필요한 부분만 불러옴
 
@@ -59,10 +59,7 @@ class SendTextView(APIView):
         if not user_chat:
             return Response({"ai": hello_text}, status=200)
         else:
-            serializer = AiChatBotSerailizer(user_chat)
-            return Response(
-                {"ai": second_hello_text, "data": serializer.data}, status=200
-            )
+            return Response({"ai": second_hello_text}, status=200)
 
     def post(self, request):
         user_input = request.data["user_input"]
@@ -86,7 +83,7 @@ class SendTextView(APIView):
             serializer = AiChatBotSerailizer(chat, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response({"ai": response, "data": serializer.data}, status=200)
+            return Response({"ai": response}, status=200)
         elif not user_chat.ai_text:
             chat = AiChatBot.objects.update(
                 user=request.user,
@@ -96,7 +93,7 @@ class SendTextView(APIView):
             serializer = AiChatBotSerailizer(chat, data=request.data)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response({"ai": response, "data": serializer.data}, status=200)
+            return Response({"ai": response}, status=200)
         else:
             user_chat.user_text.insert(0, user_input)
             user_chat.ai_text.insert(0, response)
@@ -108,4 +105,4 @@ class SendTextView(APIView):
             serializer.is_valid(raise_exception=True)
             serializer.save(user=request.user)
 
-            return Response({"ai": response, "data": serializer.data}, status=200)
+            return Response({"ai": response}, status=200)

@@ -346,7 +346,7 @@ class FeedCreateView(APIView):
             community_id=category.community.id
         ).values_list("word", flat=True)
         for word in forbidden_word:
-            if word in request.data["content"]:
+            if word in request.data["content"] or word in request.data["title"]:
                 return Response(
                     {"message": "금지어가 포함되어 있습니다"}, status=status.HTTP_400_BAD_REQUEST
                 )
@@ -434,14 +434,26 @@ class GroupPurchaseCreateView(APIView):
 
     def post(self, request, community_url):
         serializer = GroupPurchaseCreateSerializer(data=request.data)
-        community = Community.objects.get(communityurl=community_url)
+        community = get_object_or_404(Community, communityurl=community_url)
+        category = get_object_or_404(
+            Category, community=community, category_url="groupbuy"
+        )
+        forbidden_word = ForbiddenWord.objects.filter(
+            community_id=category.community.id
+        ).values_list("word", flat=True)
+        for word in forbidden_word:
+            if word in request.data["content"] or word in request.data["title"]:
+                return Response(
+                    {"message": "금지어가 포함되어 있습니다"}, status=status.HTTP_400_BAD_REQUEST
+                )
         if serializer.is_valid():
             serializer.validate_datetime(request.data)
-            serializer.save(community=community, user=request.user)
+            serializer.save(community=community, category=category, user=request.user)
             return Response(
                 {"message": "공동구매 게시글이 작성되었습니다"}, status=status.HTTP_201_CREATED
             )
         else:
+            print(serializer.errors)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -569,7 +581,6 @@ class GroupPurchaseJoinedUserView(APIView):
             serializer.save(user=request.user, grouppurchase_id=grouppurchase_id)
             # save한 후 join인원 체크 및 마감여부 확인
             if purchasefeed.check_end_person_limit_point(grouppurchase_id):
-                # print("⭐️공구 마감⭐️")
                 pass
             return Response(
                 {

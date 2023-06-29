@@ -117,7 +117,7 @@ class GroupPurchase(models.Model, HitCountMixin):
 
     title = models.CharField(max_length=50)
     content = models.TextField(blank=True)
-    product_name = models.CharField(max_length=50)
+    product_name = models.CharField(max_length=20)
     product_number = models.PositiveIntegerField(default=0, help_text="구매 예상 수량")
     product_price = models.PositiveIntegerField(help_text="전체 금액")
     # product_division_price = models.PositiveIntegerField(help_text="전체 금액/구매 인원수")
@@ -136,10 +136,10 @@ class GroupPurchase(models.Model, HitCountMixin):
     open_at = models.DateTimeField(null=False, help_text="모집 시작")
     close_at = models.DateTimeField(null=True, help_text="모집 종료")
     END_CHOICES = (
-        ("공구를 계속 진행할 거예요", "continue"),
-        ("공구를 진행하지 않을 거예요", "quit"),
-        ("신청한 사람과 논의 후 결정할래요", "discuss"),
-        ("종료 후 고민해보고 결정할래요", "maybe"),
+        ("continue", "공구를 계속 진행할 거예요"),
+        ("quit", "공구를 진행하지 않을 거예요"),
+        ("discuss", "신청한 사람과 논의 후 결정할래요"),
+        ("maybe", "종료 후 고민해보고 결정할래요"),
     )
     end_option = models.CharField(choices=END_CHOICES, max_length=20)
 
@@ -151,7 +151,6 @@ class GroupPurchase(models.Model, HitCountMixin):
         on_delete=models.CASCADE,
         related_name="purchase_category",
         blank=False,
-        default=3,
     )
 
     # 조회수 코드
@@ -172,7 +171,6 @@ class GroupPurchase(models.Model, HitCountMixin):
         """공구 제한 인원이 채워질 경우 공구 종료"""
         purchasefeed = GroupPurchase.objects.get(id=grouppurchase_id)
         if purchasefeed.joined_user is None:
-            # print("아직 신청 인원이 없음")
             return False
         else:
             joined = purchasefeed.joined_user.count()

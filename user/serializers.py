@@ -43,6 +43,7 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {"password": {"write_only": True}}
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    """profile serializer"""
     profileimageurl = serializers.SerializerMethodField()
     user_name = serializers.SerializerMethodField()
     user_email = serializers.SerializerMethodField()
@@ -83,6 +84,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    """profile 수정 serializer"""
     user_email = serializers.SerializerMethodField()
 
     class Meta:
@@ -145,6 +147,7 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
 
 
 class UserDelSerializer(serializers.ModelSerializer):
+    """user 회원탈퇴 serializer"""
     user_password = serializers.SerializerMethodField()
 
     class Meta:
