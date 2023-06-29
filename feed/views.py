@@ -316,6 +316,15 @@ class FeedDetailView(APIView):
                 {"error": "게시글 작성자만 수정할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN
             )
         else:
+            forbidden_word = ForbiddenWord.objects.filter(
+                community_id=feed.category.community.id
+            ).values_list("word", flat=True)
+            for word in forbidden_word:
+                if word in request.data["content"] or word in request.data["title"]:
+                    return Response(
+                        {"message": "금지어가 포함되어 있습니다"},
+                        status=status.HTTP_405_METHOD_NOT_ALLOWED,
+                    )
             serializer = FeedCreateSerializer(feed, data=request.data)
             if serializer.is_valid():
                 serializer.save(user=request.user)
@@ -348,7 +357,8 @@ class FeedCreateView(APIView):
         for word in forbidden_word:
             if word in request.data["content"] or word in request.data["title"]:
                 return Response(
-                    {"message": "금지어가 포함되어 있습니다"}, status=status.HTTP_400_BAD_REQUEST
+                    {"message": "금지어가 포함되어 있습니다"},
+                    status=status.HTTP_405_METHOD_NOT_ALLOWED,
                 )
         if serializer.is_valid():
             serializer.save(user=request.user, category=category)

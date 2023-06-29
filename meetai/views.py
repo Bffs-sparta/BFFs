@@ -16,7 +16,7 @@ def send_text(request, user_input, ai_chat):
         {
             # 시스템 역할(기본설정) 주기
             "role": "system",
-            "content": "Response Korean!!!, Shortly. Chat naturally, friendly like talking to Bestie. Use half words",
+            "content": "Response Korean!!!, Shortly. Chat naturally, friendly like talking to Bestie. Use half words. Do not context repetition.",
         }
     )
 
@@ -42,7 +42,8 @@ def send_text(request, user_input, ai_chat):
         messages=gpt_prompt,
         temperature=0.8,
         top_p=1,
-        presence_penalty=1,
+        presence_penalty=1.8,
+        frequency_penalty=0.2,
     )
     # json response에서 필요한 부분만 불러옴
 
