@@ -30,6 +30,7 @@ urlpatterns = [
     path("email/", SendEmailView.as_view(), name="email"),
     path("email/verify/", VerificationEmailView.as_view(), name="verify"),
     path("profile/", ProfileView.as_view(), name="profile_view"),
+    path("<int:user_id>/", ProfileDetailView.as_view(), name="profile_detail_view"),
     path(
         "<int:profile_id>/guestbook/",
         GuestBookView.as_view(),
