@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from .views import (
     CommunityView,
     CommunityDetailView,
@@ -17,12 +17,12 @@ from feed.views import (
     LikeView,
     FeedNotificationView,
     GroupPurchaseListView,
-    GroupPurchaseDetailView,
     GroupPurchaseJoinedUserView,
 )
 
 urlpatterns = [
     path("", CommunityView.as_view(), name="community_view"),
+    path("<str:community_url>/feed/", include("feed.urls")),
     path(
         "<str:community_url>/",
         CommunityDetailView.as_view(),
@@ -66,7 +66,7 @@ urlpatterns = [
         FeedCategoryListView.as_view(),
         name="feed_category_list_view",
     ),
-    # feed 상세, comment get
+    # feed 상세, 삭제 comment get
     path(
         "<str:community_url>/<int:feed_id>/",
         FeedDetailView.as_view(),
@@ -96,12 +96,6 @@ urlpatterns = [
         "<str:community_url>/grouppurchase/",
         GroupPurchaseListView.as_view(),
         name="grouppurchase_list_view",
-    ),
-    # grouppurchase 상세 페이지
-    path(
-        "<str:community_url>/grouppurchase/<int:grouppurchase_id>/",
-        GroupPurchaseDetailView.as_view(),
-        name="grouppurchase_detail_view",
     ),
     # grouppurchase 참여 / 취소
     path(

@@ -19,7 +19,7 @@ urlpatterns = [
     path("search", FeedSearchView.as_view(), name="search_community_view"),
     # 전체 feed 조회
     path("", FeedAllView.as_view(), name="feed_view"),
-    # 개별 feed 수정 삭제
+    # 개별 feed 수정
     path("<int:feed_id>/", FeedDetailView.as_view(), name="feed_detail_view"),
     # feed 생성
     path(

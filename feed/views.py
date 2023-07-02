@@ -86,6 +86,15 @@ class CommentView(APIView):
 
     def post(self, request, feed_id):
         serializer = CommentCreateSerializer(data=request.data)
+        forbidden_word = ForbiddenWord.objects.filter(
+            community__community_category__feed_category__id=feed_id
+        ).values_list("word", flat=True)
+        for word in forbidden_word:
+            if word in request.data["text"]:
+                return Response(
+                    {"message": f"금지어 '{word}' 이/가 포함되어 있습니다"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         if serializer.is_valid():
             serializer.save(user=request.user, feed_id=feed_id)
             feed = get_object_or_404(Feed, id=feed_id)
@@ -106,6 +115,15 @@ class CommentView(APIView):
             )
         else:
             serializer = CommentCreateSerializer(comment, data=request.data)
+            forbidden_word = ForbiddenWord.objects.filter(
+                community__community_category__feed_category__comment__id=comment_id
+            ).values_list("word", flat=True)
+            for word in forbidden_word:
+                if word in request.data["text"]:
+                    return Response(
+                        {"message": f"금지어 '{word}' 이/가 포함되어 있습니다"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             if serializer.is_valid():
                 serializer.save()
                 return Response({"message": "댓글을 수정했습니다."}, status=status.HTTP_200_OK)
@@ -143,6 +161,15 @@ class CocommentView(APIView):
 
     def post(self, request, comment_id):
         serializer = CocommentSerializer(data=request.data)
+        forbidden_word = ForbiddenWord.objects.filter(
+            community__community_category__feed_category__comment__id=comment_id
+        ).values_list("word", flat=True)
+        for word in forbidden_word:
+            if word in request.data["text"]:
+                return Response(
+                    {"message": f"금지어 '{word}' 이/가 포함되어 있습니다"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         if serializer.is_valid():
             serializer.save(user=request.user, comment_id=comment_id)
             return Response({"message": "대댓글을 작성했습니다."}, status=status.HTTP_201_CREATED)
@@ -156,6 +183,15 @@ class CocommentView(APIView):
                 {"error": "대댓글 작성자만 수정할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN
             )
         else:
+            forbidden_word = ForbiddenWord.objects.filter(
+                community__community_category__feed_category__comment__cocomment__id=cocomment_id
+            ).values_list("word", flat=True)
+            for word in forbidden_word:
+                if word in request.data["text"]:
+                    return Response(
+                        {"message": f"금지어 '{word}' 이/가 포함되어 있습니다"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             serializer = CocommentSerializer(cocomment, data=request.data)
             if serializer.is_valid():
                 serializer.save()
