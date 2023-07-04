@@ -2,7 +2,7 @@ name: Django_Test
 
 on:
   push:
-    branches: [ "main","development" ]
+    branches: [ "test" ]
 
 jobs:
   build:
@@ -10,26 +10,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: 3.11
-
-    - name: Install Dependencies
+    - name: Update code & Deploy
       run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        export PATH="$HOME/.poetry/bin:$PATH"
-        poetry install --no-root
-
-    - name: Run Tests with environment variables
-      env:
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        EMAIL: ${{ secrets.EMAIL }}
-        EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-        BACKEND_URL: ${{ secrets.BACKEND_URL }}
-        FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      run: |
-        poetry run python manage.py makemigrations
-        poetry run python manage.py migrate
-        poetry run python manage.py test
+        ssh -i "${{ secrets.MAKEBFFS }}" ubuntu@13.125.60.48 'cd /backend/django && git pull origin main'
+        ssh -i "${{ secrets.MAKEBFFS }}" ubuntu@13.125.60.48 'sudo docker compose up --build -d'
+        ssh -i "${{ secrets.MAKEBFFS }}" ubuntu@13.125.60.48 'sudo docker compose restart'
