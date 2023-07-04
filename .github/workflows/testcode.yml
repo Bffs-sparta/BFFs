@@ -20,12 +20,8 @@ jobs:
           echo "${{secrets.MAKEBFFS}}" >> $HOME/makebffs.pem
           chmod 600 $HOME/makebffs.pem
           ssh -i $HOME/makebffs.pem -o StrictHostKeyChecking=no ubuntu@ec2-13-125-60-48.ap-northeast-2.compute.amazonaws.com 
-          '
-          ls &&
-          cd /home/ubuntu/backend/django/ &&
-          ls &&
-          git pull origin main &&
-          cd /home/ubuntu/ &&
-          sudo docker compose up --build -d &&
+          cd /home/ubuntu/backend/django/
+          git pull origin main
+          cd /home/ubuntu/
+          sudo docker compose up --build -d
           sudo docker compose restart
-          '
