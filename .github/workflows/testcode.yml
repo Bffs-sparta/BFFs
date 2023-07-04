@@ -9,9 +9,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
     - name: Update code & Deploy
-      run: |
-        ssh -i "${{ secrets.MAKEBFFS }}" ubuntu@13.125.60.48 'cd /backend/django && git pull origin main'
-        ssh -i "${{ secrets.MAKEBFFS }}" ubuntu@13.125.60.48 'sudo docker compose up --build -d'
-        ssh -i "${{ secrets.MAKEBFFS }}" ubuntu@13.125.60.48 'sudo docker compose restart'
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.REMOTE_IP }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.MAKEBFFS }}
+        port: ${{ secrets.REMOTE_SSH_PORT }}
+        script: |
+          ssh -i "${{ secrets.MAKEBFFS }}" ubuntu@13.125.60.48 'cd /backend/django && git pull origin main'
+          ssh -i "${{ secrets.MAKEBFFS }}" ubuntu@13.125.60.48 'sudo docker compose up --build -d'
+          ssh -i "${{ secrets.MAKEBFFS }}" ubuntu@13.125.60.48 'sudo docker compose restart'
