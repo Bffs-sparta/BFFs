@@ -19,7 +19,7 @@ jobs:
         script: |
           echo "${{secrets.MAKEBFFS}}" >> $HOME/makebffs.pem
           chmod 600 $HOME/makebffs.pem
-          ssh -i $HOME/makebffs.pem -o StrictHostKeyChecking=no ubuntu@13.125.60.48.ec2-13-125-60-48.ap-northeast-2.compute.amazonaws.com 
+          ssh -i $HOME/makebffs.pem -o StrictHostKeyChecking=no ubuntu@ec2-13-125-60-48.ap-northeast-2.compute.amazonaws.com 
           '
           cd ~/backend/django/ &&
           git pull origin main &&
