@@ -352,7 +352,7 @@ class ProfileDetailView(APIView):
                     {"message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
                 )
         else:
-            return Response({"message": "권한이 없습니다!"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"message": "권한이 없습니다!"}, status=status.HTTP_401_UNAUTHORIZED)
 
     def delete(self, request, user_id):
         profile = User.objects.get(id=user_id)
@@ -435,7 +435,7 @@ class GuestBookDetailView(APIView):
             comment.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
-            return Response("권한이 없습니다.", status=status.HTTP_403_FORBIDDEN)
+            return Response("권한이 없습니다.", status=status.HTTP_401_UNAUTHORIZED)
 
 
 class MyPasswordResetView(APIView):

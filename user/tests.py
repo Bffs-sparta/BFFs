@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+
 from .models import User, Profile, GuestBook, Verify
 
 
@@ -32,6 +33,8 @@ class UserProfileViewTest(APITestCase):
         url = reverse("profile_view")
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
+        
+
 
     # profile update
     def test_profile_update(self):
@@ -45,7 +48,20 @@ class UserProfileViewTest(APITestCase):
         response = self.client.force_authenticate(user=self.user)
         response = self.client.patch(url, update_data)
         self.assertEqual(response.status_code, 200)
+        
+    # profile update(no permisiions)
+    def test_profile_certified_update(self):
+        user_id = self.user.id
+        url = reverse("profile_detail_view", kwargs={"user_id": user_id})
+        update_data = {
+            "nickname": "unity",
+            "introduction": "import unittest",
+        }
 
+        # response = self.client.force_authenticate(user=self.user)
+        response = self.client.patch(url, update_data)
+        self.assertEqual(response.status_code, 401)
+    
     # 회원탈퇴
     def test_user_delete(self):
         user_id = self.user.id
@@ -107,6 +123,7 @@ class GuestBookTest(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+
     # guestbook comment create
     def test_create_comment_view(self):
         response = self.client.post(
@@ -116,15 +133,19 @@ class GuestBookTest(APITestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+    
+        
     # guestbook comment update
-    def test_create_comment_view(self):
-        response = self.client.post(
-            path=reverse("guestbook_view", kwargs={"profile_id": 1}),
-            data=self.comment_data,
+    def test_comment_update_view(self):
+        response = self.client.patch(
+            path=reverse(
+                "guestbook_detail_view", kwargs={"profile_id": 1, "guestbook_id": 1}
+            ),
+            data=self.comment_update_data,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 200)
-
+        
     # guestbook comment delete
     def test_comment_delete_view(self):
         response = self.client.delete(
@@ -134,6 +155,16 @@ class GuestBookTest(APITestCase):
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 204)
+        
+
+    # guestbook comment delete(no permisiions)
+    def test_comment_certified_delete_view(self):
+        response = self.client.delete(
+            path=reverse(
+                "guestbook_detail_view", kwargs={"profile_id": 1, "guestbook_id": 1}
+            ),
+        )
+        self.assertEqual(response.status_code, 401)
 
 
 class sendMailTest(APITestCase):
