@@ -18,7 +18,7 @@ jobs:
         port: ${{ secrets.REMOTE_SSH_PORT }}
         script: |
           echo "${{secrets.MAKEBFFS}}" >> $HOME/makebffs.pem
-          chmod 400 $HOME/makebffs.pem
+          sudo chmod 400 $HOME/makebffs.pem
           ssh -i $HOME/makebffs.pem -o StrictHostKeyChecking=no ubuntu@13.125.60.48 '
           cd /backend/django/ &&
           git pull origin main &&
