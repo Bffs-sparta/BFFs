@@ -12,12 +12,15 @@ class MyCronJob(CronJobBase):
 
     def do(self):
         eleven_months_ago = timezone.now() - timezone.timedelta(days=330)
+        eleven_months_one_age = timezone.now() - timezone.timedelta(days=329)
         one_year_ago = timezone.now() - timezone.timedelta(days=365)
         five_years_ago = timezone.now() - timezone.timedelta(days=1825)
 
         User.objects.filter(last_login__lt=one_year_ago).update(is_dormant=True)
         pre_dormants = User.objects.filter(
-            last_login__lt=eleven_months_ago, is_dormant=False
+            last_login__lt=eleven_months_ago,
+            last_login__gt=eleven_months_one_age,
+            is_dormant=False,
         )
         recipient_list = []
         for pre_dormant in pre_dormants:

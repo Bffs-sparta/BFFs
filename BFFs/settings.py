@@ -97,8 +97,12 @@ WSGI_APPLICATION = "BFFs.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql" if config("POSTGRES_DB",default=False) else "django.db.backends.sqlite3",
-        "NAME": config("POSTGRES_DB") if config("POSTGRES_DB",default=False) else os.path.join(BASE_DIR, "db.sqlite3"),
+        "ENGINE": "django.db.backends.postgresql"
+        if config("POSTGRES_DB", default=False)
+        else "django.db.backends.sqlite3",
+        "NAME": config("POSTGRES_DB")
+        if config("POSTGRES_DB", default=False)
+        else os.path.join(BASE_DIR, "db.sqlite3"),
         "USER": config("POSTGRES_USER", default=""),
         "PASSWORD": config("POSTGRES_PASSWORD", default=""),
         "HOST": config("POSTGRES_HOST", default=""),
@@ -135,7 +139,7 @@ TIME_ZONE = "Asia/Seoul"
 
 USE_I18N = True
 
-USE_TZ = False
+USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -216,8 +220,9 @@ CELERY_TIMEZONE = "Asia/Seoul"
 CORS_ALLOWED_ORIGINS = [
     "https://makebestie.com",
     "https://api.makebestie.com",
+    "http://localhost:8080",
 ]
 
-CORS_ORIGIN_WHITELIST = ['http://13.125.60.48']
+# CORS_ORIGIN_WHITELIST = ['http://13.125.60.48']
 
-CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
+# CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST

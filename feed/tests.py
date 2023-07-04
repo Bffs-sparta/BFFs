@@ -109,7 +109,7 @@ class FeedDetailViewTest(APITestCase):
             user=cls.user, category=cls.category, title="title1", content="content1"
         )
         cls.feed_data = {
-            "category": 1,
+            "category_id": 1,
             "title": "title1",
             "content": "content1",
         }
@@ -117,11 +117,9 @@ class FeedDetailViewTest(APITestCase):
             "feed_detail_view", kwargs={"community_url": "title1", "feed_id": 1}
         )
         cls.path2 = reverse("feed_detail_view", kwargs={"feed_id": 1})
-        cls.path3 = reverse("feed_create_view", kwargs={"category_id": 1})
+        cls.path3 = reverse("feed_create_view", kwargs={"community_url": "title1"})
         cls.path4 = reverse("like_view", kwargs={"feed_id": 1})
-        cls.path5 = reverse(
-            "feed_notification_view", kwargs={"community_url": "title1", "feed_id": 1}
-        )
+        cls.path5 = reverse("feed_notification_view", kwargs={"feed_id": 1})
 
     def setUp(self):
         self.access_token = self.client.post(reverse("login"), self.user_data).data.get(
@@ -186,7 +184,7 @@ class FeedDetailViewTest(APITestCase):
     def test_put_feed_detail_not_user(self):
         """피드 수정 작성자 아닐때"""
         response = self.client.put(
-            path=self.path2,
+            path=self.path,
             data=self.feed_data,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
         )
@@ -195,7 +193,7 @@ class FeedDetailViewTest(APITestCase):
     def test_put_feed_detail_success(self):
         """피드 수정 성공"""
         response = self.client.put(
-            path=self.path2,
+            path=self.path,
             data=self.feed_data,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
@@ -204,7 +202,7 @@ class FeedDetailViewTest(APITestCase):
     def test_put_feed_detail_no_data(self):
         """data 없을 때 피드 수정 실패"""
         response = self.client.put(
-            path=self.path2,
+            path=self.path,
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 400)
@@ -244,6 +242,7 @@ class FeedDetailViewTest(APITestCase):
         """data 없을 때 피드 생성 실패"""
         response = self.client.post(
             path=self.path3,
+            data={"category_id": 1},
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 400)
@@ -251,8 +250,12 @@ class FeedDetailViewTest(APITestCase):
     def test_post_feed_detail_no_category(self):
         """category 없을 때 피드 생성 실패"""
         response = self.client.post(
-            path=reverse("feed_create_view", kwargs={"category_id": 2}),
-            data=self.feed_data,
+            path=self.path3,
+            data={
+                "category_id": 2,
+                "title": "title1",
+                "content": "content1",
+            },
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
         self.assertEqual(response.status_code, 404)
@@ -311,7 +314,7 @@ class FeedDetailViewTest(APITestCase):
         response = self.client.post(
             path=reverse(
                 "feed_notification_view",
-                kwargs={"community_url": "title1", "feed_id": 10},
+                kwargs={"feed_id": 10},
             ),
             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
         )
@@ -642,784 +645,784 @@ class CocommentViewTest(APITestCase):
         self.assertEqual(response.status_code, 403)
 
 
-class GroupPurchaseViewTest(APITestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.client = APIClient()
-        cls.user_data = {
-            "email": "test01@test.com",
-            "name": "test01",
-            "password": "test12!@",
-        }
-        cls.user_data2 = {
-            "email": "test02@test.com",
-            "name": "test02",
-            "password": "test12!@",
-        }
-        cls.user_data3 = {
-            "email": "test03@test.com",
-            "name": "test03",
-            "password": "test12!@",
-        }
+# class GroupPurchaseViewTest(APITestCase):
+#     @classmethod
+#     def setUpTestData(cls):
+#         cls.client = APIClient()
+#         cls.user_data = {
+#             "email": "test01@test.com",
+#             "name": "test01",
+#             "password": "test12!@",
+#         }
+#         cls.user_data2 = {
+#             "email": "test02@test.com",
+#             "name": "test02",
+#             "password": "test12!@",
+#         }
+#         cls.user_data3 = {
+#             "email": "test03@test.com",
+#             "name": "test03",
+#             "password": "test12!@",
+#         }
 
-        cls.user = User.objects.create_user("test01@test.com", "test01", "test12!@")
-        cls.user2 = User.objects.create_user("test02@test.com", "test02", "test12!@")
-        cls.user3 = User.objects.create_user("test03@test.com", "test03", "test12!@")
-        cls.profile_data = {
-            "user": cls.user,
-            "nickname": "nicktest1",
-            "introduction": "introduction test",
-            "region": "seoul",
-        }
-        cls.profile_data2 = {
-            "user": cls.user2,
-            "nickname": "nicktest1",
-            "introduction": "introduction test",
-            "region": "seoul",
-        }
-        cls.user_profile = Profile.objects.update(nickname="nickname1")
-        cls.user_profile = Profile.objects.update(region="seoul")
-        cls.user2_profile = Profile.objects.update(nickname="nickname2")
-        cls.user2_profile = Profile.objects.update(region="seoul")
+#         cls.user = User.objects.create_user("test01@test.com", "test01", "test12!@")
+#         cls.user2 = User.objects.create_user("test02@test.com", "test02", "test12!@")
+#         cls.user3 = User.objects.create_user("test03@test.com", "test03", "test12!@")
+#         cls.profile_data = {
+#             "user": cls.user,
+#             "nickname": "nicktest1",
+#             "introduction": "introduction test",
+#             "region": "seoul",
+#         }
+#         cls.profile_data2 = {
+#             "user": cls.user2,
+#             "nickname": "nicktest1",
+#             "introduction": "introduction test",
+#             "region": "seoul",
+#         }
+#         cls.user_profile = Profile.objects.update(nickname="nickname1")
+#         cls.user_profile = Profile.objects.update(region="seoul")
+#         cls.user2_profile = Profile.objects.update(nickname="nickname2")
+#         cls.user2_profile = Profile.objects.update(region="seoul")
 
-        cls.access_token = cls.client.post(reverse("login"), cls.user_data).data[
-            "access"
-        ]
-        cls.access_token2 = cls.client.post(reverse("login"), cls.user_data2).data[
-            "access"
-        ]
-        cls.access_token3 = cls.client.post(reverse("login"), cls.user_data3).data[
-            "access"
-        ]
+#         cls.access_token = cls.client.post(reverse("login"), cls.user_data).data[
+#             "access"
+#         ]
+#         cls.access_token2 = cls.client.post(reverse("login"), cls.user_data2).data[
+#             "access"
+#         ]
+#         cls.access_token3 = cls.client.post(reverse("login"), cls.user_data3).data[
+#             "access"
+#         ]
 
-        cls.community_data = {
-            "title": "community1",
-            "communityurl": "community1",
-            "introduction": "introduction1",
-        }
-        cls.community = Community.objects.create(
-            title="community1", communityurl="community1", introduction="introduction1"
-        )
-        CommunityAdmin.objects.create(
-            user=cls.user, community=cls.community, is_comuadmin=True
-        )
-        cls.category_data = {
-            "id": 3,
-            "community": cls.community,
-            "category_name": "공구해요",
-            "category_url": "groupbuy",
-        }
-        cls.category = Category.objects.create(
-            id=3,
-            community=cls.community,
-            category_name="공구해요",
-            category_url="groupbuy",
-        )
+#         cls.community_data = {
+#             "title": "community1",
+#             "communityurl": "community1",
+#             "introduction": "introduction1",
+#         }
+#         cls.community = Community.objects.create(
+#             title="community1", communityurl="community1", introduction="introduction1"
+#         )
+#         CommunityAdmin.objects.create(
+#             user=cls.user, community=cls.community, is_comuadmin=True
+#         )
+#         cls.category_data = {
+#             "id": 3,
+#             "community": cls.community,
+#             "category_name": "공구해요",
+#             "category_url": "groupbuy",
+#         }
+#         cls.category = Category.objects.create(
+#             id=3,
+#             community=cls.community,
+#             category_name="공구해요",
+#             category_url="groupbuy",
+#         )
 
-        cls.grouppurchase = GroupPurchase.objects.create(
-            community=cls.community,
-            category=cls.category,
-            user=cls.user,
-            title="puchase create feed3",
-            content="purchase test feed create",
-            product_name="상품명",
-            product_number="2",
-            product_price="10000",
-            link="https://diane073.tistory.com/",
-            person_limit="2",
-            location="서울시 송파구, 석촌역 8번출구 앞",
-            meeting_at="2023-06-21T12:00:00",
-            open_at="2023-06-20T18:00:00",
-            close_at="2023-06-21T09:00:00",
-            end_option="quit",
-        )
-        cls.grouppurchase_limit_10 = GroupPurchase.objects.create(
-            community=cls.community,
-            category=cls.category,
-            user=cls.user,
-            title="puchase create feed3",
-            content="purchase test feed create",
-            product_name="상품명",
-            product_number="2",
-            product_price="10000",
-            link="https://diane073.tistory.com/",
-            person_limit="10",
-            location="서울시 송파구, 석촌역 8번출구 앞",
-            meeting_at="2023-06-21T12:00:00",
-            open_at="2023-06-20T18:00:00",
-            close_at="2023-06-21T09:00:00",
-            end_option="quit",
-        )
-        cls.grouppurchase_limit_1 = GroupPurchase.objects.create(
-            community=cls.community,
-            category=cls.category,
-            user=cls.user,
-            title="puchase create feed3",
-            content="purchase test feed create",
-            product_name="상품명",
-            product_number="2",
-            product_price="10000",
-            link="https://diane073.tistory.com/",
-            person_limit="1",
-            location="서울시 송파구, 석촌역 8번출구 앞",
-            meeting_at="2023-06-21T12:00:00",
-            open_at="2023-06-20T18:00:00",
-            close_at="2023-06-21T09:00:00",
-            end_option="quit",
-        )
-        cls.grouppurchase_is_ended = GroupPurchase.objects.create(
-            community=cls.community,
-            category=cls.category,
-            user=cls.user,
-            title="puchase create feed3",
-            content="purchase test feed create",
-            product_name="상품명",
-            product_number="10",
-            product_price="10000",
-            link="https://diane073.tistory.com/",
-            person_limit="2",
-            location="서울시 송파구, 석촌역 8번출구 앞",
-            meeting_at="2023-06-09T12:00:00",
-            open_at="2023-06-10T18:00:00",
-            close_at="2023-06-11T09:00:00",
-            end_option="quit",
-            is_ended="True",
-        )
-        cls.joined_user = JoinedUser.objects.create(
-            grouppurchase=cls.grouppurchase_limit_10, user=cls.user, product_quantity=1
-        )
-        cls.quit_user = JoinedUser.objects.create(
-            grouppurchase=cls.grouppurchase_limit_10,
-            user=cls.user,
-            product_quantity=0,
-            is_deleted=True,
-        )
+#         cls.grouppurchase = GroupPurchase.objects.create(
+#             community=cls.community,
+#             category=cls.category,
+#             user=cls.user,
+#             title="puchase create feed3",
+#             content="purchase test feed create",
+#             product_name="상품명",
+#             product_number="2",
+#             product_price="10000",
+#             link="https://diane073.tistory.com/",
+#             person_limit="2",
+#             location="서울시 송파구, 석촌역 8번출구 앞",
+#             meeting_at="2023-06-21T12:00:00",
+#             open_at="2023-06-20T18:00:00",
+#             close_at="2023-06-21T09:00:00",
+#             end_option="quit",
+#         )
+#         cls.grouppurchase_limit_10 = GroupPurchase.objects.create(
+#             community=cls.community,
+#             category=cls.category,
+#             user=cls.user,
+#             title="puchase create feed3",
+#             content="purchase test feed create",
+#             product_name="상품명",
+#             product_number="2",
+#             product_price="10000",
+#             link="https://diane073.tistory.com/",
+#             person_limit="10",
+#             location="서울시 송파구, 석촌역 8번출구 앞",
+#             meeting_at="2023-06-21T12:00:00",
+#             open_at="2023-06-20T18:00:00",
+#             close_at="2023-06-21T09:00:00",
+#             end_option="quit",
+#         )
+#         cls.grouppurchase_limit_1 = GroupPurchase.objects.create(
+#             community=cls.community,
+#             category=cls.category,
+#             user=cls.user,
+#             title="puchase create feed3",
+#             content="purchase test feed create",
+#             product_name="상품명",
+#             product_number="2",
+#             product_price="10000",
+#             link="https://diane073.tistory.com/",
+#             person_limit="1",
+#             location="서울시 송파구, 석촌역 8번출구 앞",
+#             meeting_at="2023-06-21T12:00:00",
+#             open_at="2023-06-20T18:00:00",
+#             close_at="2023-06-21T09:00:00",
+#             end_option="quit",
+#         )
+#         cls.grouppurchase_is_ended = GroupPurchase.objects.create(
+#             community=cls.community,
+#             category=cls.category,
+#             user=cls.user,
+#             title="puchase create feed3",
+#             content="purchase test feed create",
+#             product_name="상품명",
+#             product_number="10",
+#             product_price="10000",
+#             link="https://diane073.tistory.com/",
+#             person_limit="2",
+#             location="서울시 송파구, 석촌역 8번출구 앞",
+#             meeting_at="2023-06-09T12:00:00",
+#             open_at="2023-06-10T18:00:00",
+#             close_at="2023-06-11T09:00:00",
+#             end_option="quit",
+#             is_ended="True",
+#         )
+#         cls.joined_user = JoinedUser.objects.create(
+#             grouppurchase=cls.grouppurchase_limit_10, user=cls.user, product_quantity=1
+#         )
+#         cls.quit_user = JoinedUser.objects.create(
+#             grouppurchase=cls.grouppurchase_limit_10,
+#             user=cls.user,
+#             product_quantity=0,
+#             is_deleted=True,
+#         )
 
-        cls.purchase_comment = GroupPurchaseComment.objects.create(
-            grouppurchase=cls.grouppurchase, user=cls.user, text="test comment1"
-        )
+#         cls.purchase_comment = GroupPurchaseComment.objects.create(
+#             grouppurchase=cls.grouppurchase, user=cls.user, text="test comment1"
+#         )
 
-        cls.path = reverse(
-            "grouppurchase_create_view", args=[cls.community.communityurl]
-        )
-        cls.path2 = reverse(
-            "grouppurchase_put_delete_view",
-            args=[cls.community.communityurl, cls.grouppurchase.id],
-        )
-        cls.path3 = reverse(
-            "grouppurchase_put_delete_view",
-            args=[cls.community.communityurl, cls.grouppurchase_is_ended.id],
-        )
-        cls.path4 = reverse(
-            "grouppurchase_list_view", args=[cls.community.communityurl]
-        )
-        cls.path5 = reverse(
-            "grouppurchase_put_delete_view",
-            args=[cls.community.communityurl, cls.grouppurchase.id],
-        )
-        cls.path6 = reverse("grouppurchase_join_view", args=[cls.grouppurchase.id])
-        cls.path7 = reverse(
-            "grouppurchase_join_view", args=[cls.grouppurchase_limit_1.id]
-        )
-        cls.path8 = reverse(
-            "grouppurchase_join_view", args=[cls.grouppurchase_is_ended.id]
-        )
-        cls.path9 = reverse(
-            "grouppurchase_join_view", args=[cls.grouppurchase_limit_10.id]
-        )
-        cls.path10 = reverse(
-            "purchase_comment_create_view", args=[cls.grouppurchase.id]
-        )
-        cls.path11 = reverse(
-            "purchase_comment_put_delete_view", args=[cls.purchase_comment.id]
-        )
+#         cls.path = reverse(
+#             "grouppurchase_create_view", args=[cls.community.communityurl]
+#         )
+#         cls.path2 = reverse(
+#             "grouppurchase_put_delete_view",
+#             args=[cls.community.communityurl, cls.grouppurchase.id],
+#         )
+#         cls.path3 = reverse(
+#             "grouppurchase_put_delete_view",
+#             args=[cls.community.communityurl, cls.grouppurchase_is_ended.id],
+#         )
+#         cls.path4 = reverse(
+#             "grouppurchase_list_view", args=[cls.community.communityurl]
+#         )
+#         cls.path5 = reverse(
+#             "grouppurchase_put_delete_view",
+#             args=[cls.community.communityurl, cls.grouppurchase.id],
+#         )
+#         cls.path6 = reverse("grouppurchase_join_view", args=[cls.grouppurchase.id])
+#         cls.path7 = reverse(
+#             "grouppurchase_join_view", args=[cls.grouppurchase_limit_1.id]
+#         )
+#         cls.path8 = reverse(
+#             "grouppurchase_join_view", args=[cls.grouppurchase_is_ended.id]
+#         )
+#         cls.path9 = reverse(
+#             "grouppurchase_join_view", args=[cls.grouppurchase_limit_10.id]
+#         )
+#         cls.path10 = reverse(
+#             "purchase_comment_create_view", args=[cls.grouppurchase.id]
+#         )
+#         cls.path11 = reverse(
+#             "purchase_comment_put_delete_view", args=[cls.purchase_comment.id]
+#         )
 
-    def setUp(self):
-        self.grouppurchase_data = {
-            "community": self.community.id,
-            "category": self.category.id,
-            "user": self.user.id,
-            "title": "purchase create feed3",
-            "content": "purchase test feed create",
-            "product_name": "상품명",
-            "product_number": "10",
-            "product_price": "10000",
-            "link": "https://diane073.tistory.com/",
-            "person_limit": "2",
-            "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "2099-07-31T12:00:00",
-            "open_at": "2025-07-20T18:00:00",
-            "close_at": "2099-07-23T09:00:00",
-            "end_option": "quit",
-        }
-        self.grouppurchase_data_open_fail = {
-            "community": self.community.id,
-            "category": self.category.id,
-            "user": self.user.id,
-            "title": "purchase create feed",
-            "content": "purchase test feed create",
-            "product_name": "상품명",
-            "product_number": "10",
-            "product_price": "10000",
-            "link": "https://diane073.tistory.com/",
-            "person_limit": "2",
-            "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "9999-06-30T12:00:00",
-            "open_at": "2023-06-01T18:00:00",
-            "close_at": "9999-06-25T09:00:00",
-            "end_option": "quit",
-        }
-        self.grouppurchase_data_close_fail = {
-            "community": self.community.id,
-            "category": self.category.id,
-            "user": self.user.id,
-            "title": "purchase create feed",
-            "content": "purchase test feed create",
-            "product_name": "상품명",
-            "product_number": "10",
-            "product_price": "10000",
-            "link": "https://diane073.tistory.com/",
-            "person_limit": "5",
-            "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "9999-06-30T12:00:00",
-            "open_at": "9999-06-25T18:00:00",
-            "close_at": "2023-06-10T09:00:00",
-            "end_option": "quit",
-        }
-        self.grouppurchase_data_meeting_fail = {
-            "community": self.community.id,
-            "category": self.category.id,
-            "user": self.user.id,
-            "title": "purchase create feed",
-            "content": "purchase test feed create",
-            "product_name": "상품명",
-            "product_number": "10",
-            "product_price": "10000",
-            "link": "https://diane073.tistory.com/",
-            "person_limit": "2",
-            "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "2023-06-10T12:00:00",
-            "open_at": "9999-06-25T18:00:00",
-            "close_at": "9999-06-30T09:00:00",
-            "end_option": "quit",
-        }
-        self.grouppurchase_data_not_close_open_fail = {
-            "community": self.community.id,
-            "category": self.category.id,
-            "user": self.user.id,
-            "title": "purchase create feed",
-            "content": "purchase test feed create",
-            "product_name": "상품명",
-            "product_number": "10",
-            "product_price": "10000",
-            "link": "https://diane073.tistory.com/",
-            "person_limit": "2",
-            "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "9999-06-30T12:00:00",
-            "open_at": "2023-06-01T18:00:00",
-            "end_option": "quit",
-        }
-        self.grouppurchase_data_not_close_meeting_fail = {
-            "community": self.community.id,
-            "category": self.category.id,
-            "user": self.user.id,
-            "title": "purchase create feed",
-            "content": "purchase test feed create",
-            "product_name": "상품명",
-            "product_number": "10",
-            "product_price": "10000",
-            "link": "https://diane073.tistory.com/",
-            "person_limit": "2",
-            "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "2023-06-10T12:00:00",
-            "open_at": "9999-06-25T18:00:00",
-            "end_option": "quit",
-        }
-        self.grouppurchase_data_not_close_open_meeting_fail = {
-            "community": self.community.id,
-            "category": self.category.id,
-            "user": self.user.id,
-            "title": "purchase create feed",
-            "content": "purchase test feed create",
-            "product_name": "상품명",
-            "product_number": "10",
-            "product_price": "10000",
-            "link": "https://diane073.tistory.com/",
-            "person_limit": "2",
-            "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "2023-06-10T12:00:00",
-            "open_at": "9999-06-25T18:00:00",
-            "end_option": "quit",
-        }
-        self.grouppurchase_data_not_close_now_meeting_fail = {
-            "community": self.community.id,
-            "category": self.category.id,
-            "user": self.user.id,
-            "title": "purchase create feed",
-            "content": "purchase test feed create",
-            "product_name": "상품명",
-            "product_number": "10",
-            "product_price": "10000",
-            "link": "https://diane073.tistory.com/",
-            "person_limit": "2",
-            "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "2023-07-1T12:00:00",
-            "open_at": "2023-06-25T18:00:00",
-            "end_option": "quit",
-        }
-        self.grouppurchase_data_is_ended = {
-            "community": self.community.id,
-            "category": self.category.id,
-            "user": self.user.id,
-            "title": "purchase create feed",
-            "content": "purchase test feed create",
-            "product_name": "상품명",
-            "product_number": "10",
-            "product_price": "10000",
-            "link": "https://diane073.tistory.com/",
-            "person_limit": "2",
-            "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "2023-06-01T12:00:00",
-            "open_at": "2023-06-01T18:00:00",
-            "close_at": "2023-06-10T09:00:00",
-            "end_option": "quit",
-            "is_ended": "True",
-        }
-        self.grouppurchase_update_data = {
-            "community": self.community.id,
-            "category": self.category.id,
-            "user": self.user.id,
-            "title": "purchase update",
-            "content": "purchase update",
-            "product_name": "product",
-            "product_number": "2",
-            "product_price": "10000",
-            "link": "https://diane073.tistory.com/",
-            "person_limit": "2",
-            "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "9999-06-30T12:00:00",
-            "open_at": "9999-06-24T18:00:00",
-            "close_at": "9999-06-25T09:00:00",
-            "end_option": "quit",
-        }
-        self.grouppurchase_update_data_meeting_fail = {
-            "community": self.community.id,
-            "category": self.category.id,
-            "user": self.user.id,
-            "title": "purchase update",
-            "content": "purchase update",
-            "product_name": "product",
-            "product_number": "2",
-            "product_price": "10000",
-            "link": "https://diane073.tistory.com/",
-            "person_limit": "2",
-            "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "2023-06-10T12:00:00",
-            "open_at": "9999-06-24T18:00:00",
-            "close_at": "9999-06-30T09:00:00",
-            "end_option": "quit",
-        }
-        self.grouppurchase_update_data_close_fail = {
-            "community": self.community.id,
-            "category": self.category.id,
-            "user": self.user.id,
-            "title": "purchase update",
-            "content": "purchase update",
-            "product_name": "product",
-            "product_number": "2",
-            "product_price": "10000",
-            "link": "https://diane073.tistory.com/",
-            "person_limit": "2",
-            "location": "서울시 송파구, 석촌역 8번출구 앞",
-            "meeting_at": "9999-06-30T12:00:00",
-            "open_at": "9999-06-24T18:00:00",
-            "close_at": "2023-06-10T09:00:00",
-            "end_option": "quit",
-        }
-        self.join_data = {"product_quantity": 1}
-        self.join_data_update = {"product_quantity": 2}
-        self.join_data_0 = {"product_quantity": 0}
-        self.join_data_1 = {"product_quantity": -1}
-        self.purchase_comment_data = {
-            "grouppurchase": self.grouppurchase,
-            "text": "test comment1",
-        }
-        self.purchase_comment_data2 = {
-            "grouppurchase": self.grouppurchase,
-            "text": "test update comment1",
-        }
+#     def setUp(self):
+#         self.grouppurchase_data = {
+#             "community": self.community.id,
+#             "category": self.category.id,
+#             "user": self.user.id,
+#             "title": "purchase create feed3",
+#             "content": "purchase test feed create",
+#             "product_name": "상품명",
+#             "product_number": "10",
+#             "product_price": "10000",
+#             "link": "https://diane073.tistory.com/",
+#             "person_limit": "2",
+#             "location": "서울시 송파구, 석촌역 8번출구 앞",
+#             "meeting_at": "2099-07-31T12:00:00",
+#             "open_at": "2025-07-20T18:00:00",
+#             "close_at": "2099-07-23T09:00:00",
+#             "end_option": "quit",
+#         }
+#         self.grouppurchase_data_open_fail = {
+#             "community": self.community.id,
+#             "category": self.category.id,
+#             "user": self.user.id,
+#             "title": "purchase create feed",
+#             "content": "purchase test feed create",
+#             "product_name": "상품명",
+#             "product_number": "10",
+#             "product_price": "10000",
+#             "link": "https://diane073.tistory.com/",
+#             "person_limit": "2",
+#             "location": "서울시 송파구, 석촌역 8번출구 앞",
+#             "meeting_at": "9999-06-30T12:00:00",
+#             "open_at": "2023-06-01T18:00:00",
+#             "close_at": "9999-06-25T09:00:00",
+#             "end_option": "quit",
+#         }
+#         self.grouppurchase_data_close_fail = {
+#             "community": self.community.id,
+#             "category": self.category.id,
+#             "user": self.user.id,
+#             "title": "purchase create feed",
+#             "content": "purchase test feed create",
+#             "product_name": "상품명",
+#             "product_number": "10",
+#             "product_price": "10000",
+#             "link": "https://diane073.tistory.com/",
+#             "person_limit": "5",
+#             "location": "서울시 송파구, 석촌역 8번출구 앞",
+#             "meeting_at": "9999-06-30T12:00:00",
+#             "open_at": "9999-06-25T18:00:00",
+#             "close_at": "2023-06-10T09:00:00",
+#             "end_option": "quit",
+#         }
+#         self.grouppurchase_data_meeting_fail = {
+#             "community": self.community.id,
+#             "category": self.category.id,
+#             "user": self.user.id,
+#             "title": "purchase create feed",
+#             "content": "purchase test feed create",
+#             "product_name": "상품명",
+#             "product_number": "10",
+#             "product_price": "10000",
+#             "link": "https://diane073.tistory.com/",
+#             "person_limit": "2",
+#             "location": "서울시 송파구, 석촌역 8번출구 앞",
+#             "meeting_at": "2023-06-10T12:00:00",
+#             "open_at": "9999-06-25T18:00:00",
+#             "close_at": "9999-06-30T09:00:00",
+#             "end_option": "quit",
+#         }
+#         self.grouppurchase_data_not_close_open_fail = {
+#             "community": self.community.id,
+#             "category": self.category.id,
+#             "user": self.user.id,
+#             "title": "purchase create feed",
+#             "content": "purchase test feed create",
+#             "product_name": "상품명",
+#             "product_number": "10",
+#             "product_price": "10000",
+#             "link": "https://diane073.tistory.com/",
+#             "person_limit": "2",
+#             "location": "서울시 송파구, 석촌역 8번출구 앞",
+#             "meeting_at": "9999-06-30T12:00:00",
+#             "open_at": "2023-06-01T18:00:00",
+#             "end_option": "quit",
+#         }
+#         self.grouppurchase_data_not_close_meeting_fail = {
+#             "community": self.community.id,
+#             "category": self.category.id,
+#             "user": self.user.id,
+#             "title": "purchase create feed",
+#             "content": "purchase test feed create",
+#             "product_name": "상품명",
+#             "product_number": "10",
+#             "product_price": "10000",
+#             "link": "https://diane073.tistory.com/",
+#             "person_limit": "2",
+#             "location": "서울시 송파구, 석촌역 8번출구 앞",
+#             "meeting_at": "2023-06-10T12:00:00",
+#             "open_at": "9999-06-25T18:00:00",
+#             "end_option": "quit",
+#         }
+#         self.grouppurchase_data_not_close_open_meeting_fail = {
+#             "community": self.community.id,
+#             "category": self.category.id,
+#             "user": self.user.id,
+#             "title": "purchase create feed",
+#             "content": "purchase test feed create",
+#             "product_name": "상품명",
+#             "product_number": "10",
+#             "product_price": "10000",
+#             "link": "https://diane073.tistory.com/",
+#             "person_limit": "2",
+#             "location": "서울시 송파구, 석촌역 8번출구 앞",
+#             "meeting_at": "2023-06-10T12:00:00",
+#             "open_at": "9999-06-25T18:00:00",
+#             "end_option": "quit",
+#         }
+#         self.grouppurchase_data_not_close_now_meeting_fail = {
+#             "community": self.community.id,
+#             "category": self.category.id,
+#             "user": self.user.id,
+#             "title": "purchase create feed",
+#             "content": "purchase test feed create",
+#             "product_name": "상품명",
+#             "product_number": "10",
+#             "product_price": "10000",
+#             "link": "https://diane073.tistory.com/",
+#             "person_limit": "2",
+#             "location": "서울시 송파구, 석촌역 8번출구 앞",
+#             "meeting_at": "2023-07-1T12:00:00",
+#             "open_at": "2023-06-25T18:00:00",
+#             "end_option": "quit",
+#         }
+#         self.grouppurchase_data_is_ended = {
+#             "community": self.community.id,
+#             "category": self.category.id,
+#             "user": self.user.id,
+#             "title": "purchase create feed",
+#             "content": "purchase test feed create",
+#             "product_name": "상품명",
+#             "product_number": "10",
+#             "product_price": "10000",
+#             "link": "https://diane073.tistory.com/",
+#             "person_limit": "2",
+#             "location": "서울시 송파구, 석촌역 8번출구 앞",
+#             "meeting_at": "2023-06-01T12:00:00",
+#             "open_at": "2023-06-01T18:00:00",
+#             "close_at": "2023-06-10T09:00:00",
+#             "end_option": "quit",
+#             "is_ended": "True",
+#         }
+#         self.grouppurchase_update_data = {
+#             "community": self.community.id,
+#             "category": self.category.id,
+#             "user": self.user.id,
+#             "title": "purchase update",
+#             "content": "purchase update",
+#             "product_name": "product",
+#             "product_number": "2",
+#             "product_price": "10000",
+#             "link": "https://diane073.tistory.com/",
+#             "person_limit": "2",
+#             "location": "서울시 송파구, 석촌역 8번출구 앞",
+#             "meeting_at": "9999-06-30T12:00:00",
+#             "open_at": "9999-06-24T18:00:00",
+#             "close_at": "9999-06-25T09:00:00",
+#             "end_option": "quit",
+#         }
+#         self.grouppurchase_update_data_meeting_fail = {
+#             "community": self.community.id,
+#             "category": self.category.id,
+#             "user": self.user.id,
+#             "title": "purchase update",
+#             "content": "purchase update",
+#             "product_name": "product",
+#             "product_number": "2",
+#             "product_price": "10000",
+#             "link": "https://diane073.tistory.com/",
+#             "person_limit": "2",
+#             "location": "서울시 송파구, 석촌역 8번출구 앞",
+#             "meeting_at": "2023-06-10T12:00:00",
+#             "open_at": "9999-06-24T18:00:00",
+#             "close_at": "9999-06-30T09:00:00",
+#             "end_option": "quit",
+#         }
+#         self.grouppurchase_update_data_close_fail = {
+#             "community": self.community.id,
+#             "category": self.category.id,
+#             "user": self.user.id,
+#             "title": "purchase update",
+#             "content": "purchase update",
+#             "product_name": "product",
+#             "product_number": "2",
+#             "product_price": "10000",
+#             "link": "https://diane073.tistory.com/",
+#             "person_limit": "2",
+#             "location": "서울시 송파구, 석촌역 8번출구 앞",
+#             "meeting_at": "9999-06-30T12:00:00",
+#             "open_at": "9999-06-24T18:00:00",
+#             "close_at": "2023-06-10T09:00:00",
+#             "end_option": "quit",
+#         }
+#         self.join_data = {"product_quantity": 1}
+#         self.join_data_update = {"product_quantity": 2}
+#         self.join_data_0 = {"product_quantity": 0}
+#         self.join_data_1 = {"product_quantity": -1}
+#         self.purchase_comment_data = {
+#             "grouppurchase": self.grouppurchase,
+#             "text": "test comment1",
+#         }
+#         self.purchase_comment_data2 = {
+#             "grouppurchase": self.grouppurchase,
+#             "text": "test update comment1",
+#         }
 
-    def test_create_grouppurchase_feed(self):
-        """공구 게시글 생성 성공"""
-        response = self.client.post(
-            path=self.path,
-            data=self.grouppurchase_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(response.status_code, 201)
+#     def test_create_grouppurchase_feed(self):
+#         """공구 게시글 생성 성공"""
+#         response = self.client.post(
+#             path=self.path,
+#             data=self.grouppurchase_data,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(response.status_code, 201)
 
-    def test_create_grouppurchase_feed_open_fail(self):
-        """공구 게시글 open 시간이 현재시간보다 느리게 생성"""
-        response = self.client.post(
-            path=self.path,
-            data=self.grouppurchase_data_open_fail,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(str(response.data["error"]), "모집 시작시간 오류. 현재 이후의 시점을 선택해주세요.")
-        self.assertEqual(response.status_code, 400)
+#     def test_create_grouppurchase_feed_open_fail(self):
+#         """공구 게시글 open 시간이 현재시간보다 느리게 생성"""
+#         response = self.client.post(
+#             path=self.path,
+#             data=self.grouppurchase_data_open_fail,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(str(response.data["error"]), "모집 시작시간 오류. 현재 이후의 시점을 선택해주세요.")
+#         self.assertEqual(response.status_code, 400)
 
-    def test_create_grouppurchase_feed_close_fail(self):
-        """공구 게시글 close 시간이 open 시간보다 느리게 생성"""
-        response = self.client.post(
-            path=self.path,
-            data=self.grouppurchase_data_close_fail,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(
-            response.data["error"].title(), "모집 종료시간 오류. 모집 시작보다 이후의 시점을 선택해주세요."
-        )
-        self.assertEqual(response.status_code, 400)
+#     def test_create_grouppurchase_feed_close_fail(self):
+#         """공구 게시글 close 시간이 open 시간보다 느리게 생성"""
+#         response = self.client.post(
+#             path=self.path,
+#             data=self.grouppurchase_data_close_fail,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(
+#             response.data["error"].title(), "모집 종료시간 오류. 모집 시작보다 이후의 시점을 선택해주세요."
+#         )
+#         self.assertEqual(response.status_code, 400)
 
-    def test_create_grouppurchase_feed_meeting_fail(self):
-        """공구 게시글 meeting 시간이 close 시간보다 느리게 생성"""
-        response = self.client.post(
-            path=self.path,
-            data=self.grouppurchase_data_meeting_fail,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(
-            response.data["error"].title(), "만날시간 오류. 모집 종료보다 이후의 시점을 선택해주세요."
-        )
-        self.assertEqual(response.status_code, 400)
+#     def test_create_grouppurchase_feed_meeting_fail(self):
+#         """공구 게시글 meeting 시간이 close 시간보다 느리게 생성"""
+#         response = self.client.post(
+#             path=self.path,
+#             data=self.grouppurchase_data_meeting_fail,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(
+#             response.data["error"].title(), "만날시간 오류. 모집 종료보다 이후의 시점을 선택해주세요."
+#         )
+#         self.assertEqual(response.status_code, 400)
 
-    def test_create_grouppurchase_feed_not_close_open_fail(self):
-        """not close_at / 공구 게시글 open 시간이 현재시간보다 느리게 생성"""
-        response = self.client.post(
-            path=self.path,
-            data=self.grouppurchase_data_not_close_open_fail,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(
-            response.data["error"].title(), "모집 시작시간 오류. 현재 이후의 시점을 선택해주세요."
-        )
-        self.assertEqual(response.status_code, 400)
+#     def test_create_grouppurchase_feed_not_close_open_fail(self):
+#         """not close_at / 공구 게시글 open 시간이 현재시간보다 느리게 생성"""
+#         response = self.client.post(
+#             path=self.path,
+#             data=self.grouppurchase_data_not_close_open_fail,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(
+#             response.data["error"].title(), "모집 시작시간 오류. 현재 이후의 시점을 선택해주세요."
+#         )
+#         self.assertEqual(response.status_code, 400)
 
-    def test_create_grouppurchase_feed_not_close_meeting_fail(self):
-        """not close_at / 공구 게시글 meeting 시간이 open 시간보다 느리게 생성"""
-        response = self.client.post(
-            path=self.path,
-            data=self.grouppurchase_data_not_close_meeting_fail,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(
-            response.data["error"].title(), "만날시간 오류. 모집 시작보다 이후의 시점을 선택해주세요."
-        )
-        self.assertEqual(response.status_code, 400)
+#     def test_create_grouppurchase_feed_not_close_meeting_fail(self):
+#         """not close_at / 공구 게시글 meeting 시간이 open 시간보다 느리게 생성"""
+#         response = self.client.post(
+#             path=self.path,
+#             data=self.grouppurchase_data_not_close_meeting_fail,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(
+#             response.data["error"].title(), "만날시간 오류. 모집 시작보다 이후의 시점을 선택해주세요."
+#         )
+#         self.assertEqual(response.status_code, 400)
 
-    def test_update_grouppurchase_feed(self):
-        """공구 게시글 수정 성공"""
-        response = self.client.put(
-            path=self.path2,
-            data=self.grouppurchase_update_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(response.status_code, 200)
+#     def test_update_grouppurchase_feed(self):
+#         """공구 게시글 수정 성공"""
+#         response = self.client.put(
+#             path=self.path2,
+#             data=self.grouppurchase_update_data,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(response.status_code, 200)
 
-    def test_update_grouppurchase_feed_not_matched_user(self):
-        """공구 게시글 권한없는 유저 수정 실패"""
-        response = self.client.put(
-            path=self.path2,
-            data=self.grouppurchase_update_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-        )
-        self.assertEqual(response.status_code, 400)
+#     def test_update_grouppurchase_feed_not_matched_user(self):
+#         """공구 게시글 권한없는 유저 수정 실패"""
+#         response = self.client.put(
+#             path=self.path2,
+#             data=self.grouppurchase_update_data,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+#         )
+#         self.assertEqual(response.status_code, 400)
 
-    def test_update_grouppurchase_feed_close_fail(self):
-        """공구 게시글 수정 실패, close시간"""
-        response = self.client.put(
-            path=self.path2,
-            data=self.grouppurchase_update_data_close_fail,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(
-            response.data["error"].title(), "모집 종료시간 오류. 현재 이후의 시점을 선택해주세요."
-        )
-        self.assertEqual(response.status_code, 400)
+#     def test_update_grouppurchase_feed_close_fail(self):
+#         """공구 게시글 수정 실패, close시간"""
+#         response = self.client.put(
+#             path=self.path2,
+#             data=self.grouppurchase_update_data_close_fail,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(
+#             response.data["error"].title(), "모집 종료시간 오류. 현재 이후의 시점을 선택해주세요."
+#         )
+#         self.assertEqual(response.status_code, 400)
 
-    def test_update_grouppurchase_feed_meeting_fail(self):
-        """공구 게시글 수정 실패, meeting시간"""
-        response = self.client.put(
-            path=self.path2,
-            data=self.grouppurchase_update_data_meeting_fail,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(
-            response.data["error"].title(), "만날시간 오류. 모집 종료보다 이후의 시점을 선택해주세요."
-        )
-        self.assertEqual(response.status_code, 400)
+#     def test_update_grouppurchase_feed_meeting_fail(self):
+#         """공구 게시글 수정 실패, meeting시간"""
+#         response = self.client.put(
+#             path=self.path2,
+#             data=self.grouppurchase_update_data_meeting_fail,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(
+#             response.data["error"].title(), "만날시간 오류. 모집 종료보다 이후의 시점을 선택해주세요."
+#         )
+#         self.assertEqual(response.status_code, 400)
 
-    def test_create_grouppurchase_feed_not_close_meeting_fail_1(self):
-        """not close_at / 현재 > meeting시간 실패"""
-        response = self.client.put(
-            path=self.path2,
-            data=self.grouppurchase_data_not_close_now_meeting_fail,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(response.data["error"].title(), "만날시간 오류. 현재 이후의 시점을 선택해주세요.")
-        self.assertEqual(response.status_code, 400)
+#     def test_create_grouppurchase_feed_not_close_meeting_fail_1(self):
+#         """not close_at / 현재 > meeting시간 실패"""
+#         response = self.client.put(
+#             path=self.path2,
+#             data=self.grouppurchase_data_not_close_now_meeting_fail,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(response.data["error"].title(), "만날시간 오류. 현재 이후의 시점을 선택해주세요.")
+#         self.assertEqual(response.status_code, 400)
 
-    def test_create_grouppurchase_feed_not_close_meeting_fail_2(self):
-        """not close_at / open > meeting 실패"""
-        response = self.client.put(
-            path=self.path2,
-            data=self.grouppurchase_data_not_close_open_meeting_fail,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(
-            response.data["error"].title(), "만날시간 오류. 모집 시작보다 이후의 시점을 선택해주세요."
-        )
-        self.assertEqual(response.status_code, 400)
+#     def test_create_grouppurchase_feed_not_close_meeting_fail_2(self):
+#         """not close_at / open > meeting 실패"""
+#         response = self.client.put(
+#             path=self.path2,
+#             data=self.grouppurchase_data_not_close_open_meeting_fail,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(
+#             response.data["error"].title(), "만날시간 오류. 모집 시작보다 이후의 시점을 선택해주세요."
+#         )
+#         self.assertEqual(response.status_code, 400)
 
-    def test_delete_grouppurchase_feed_not_matched_user(self):
-        """공구 게시글 권한없는 유저 삭제 실패"""
-        response = self.client.delete(
-            self.path2, HTTP_AUTHORIZATION=f"Bearer {self.access_token2}"
-        )
-        self.assertEqual(response.status_code, 200)
+#     def test_delete_grouppurchase_feed_not_matched_user(self):
+#         """공구 게시글 권한없는 유저 삭제 실패"""
+#         response = self.client.delete(
+#             self.path2, HTTP_AUTHORIZATION=f"Bearer {self.access_token2}"
+#         )
+#         self.assertEqual(response.status_code, 200)
 
-    def test_delete_grouppurchase_feed(self):
-        """공구 게시글 삭제"""
-        response = self.client.delete(
-            self.path2, HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
-        )
-        self.assertEqual(response.status_code, 200)
+#     def test_delete_grouppurchase_feed(self):
+#         """공구 게시글 삭제"""
+#         response = self.client.delete(
+#             self.path2, HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+#         )
+#         self.assertEqual(response.status_code, 200)
 
-    def test_delete_grouppurchase_feed_not_matched_user(self):
-        """공구 게시글 권한없는 유저 삭제 실패"""
-        response = self.client.delete(
-            self.path2, HTTP_AUTHORIZATION=f"Bearer {self.access_token2}"
-        )
-        self.assertEqual(response.status_code, 403)
+#     def test_delete_grouppurchase_feed_not_matched_user(self):
+#         """공구 게시글 권한없는 유저 삭제 실패"""
+#         response = self.client.delete(
+#             self.path2, HTTP_AUTHORIZATION=f"Bearer {self.access_token2}"
+#         )
+#         self.assertEqual(response.status_code, 403)
 
-    def test_delete_grouppurchase_feed_endned_fail(self):
-        """종료된 공구 게시글 삭제 실패"""
-        response = self.client.delete(
-            self.path3, HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
-        )
-        self.assertEqual(response.status_code, 405)
+#     def test_delete_grouppurchase_feed_endned_fail(self):
+#         """종료된 공구 게시글 삭제 실패"""
+#         response = self.client.delete(
+#             self.path3, HTTP_AUTHORIZATION=f"Bearer {self.access_token}"
+#         )
+#         self.assertEqual(response.status_code, 405)
 
-    def test_get_grouppurchase_feed_list(self):
-        """공구 게시글 list get, 로그인 없이"""
-        response = self.client.get(
-            path=self.path4,
-        )
-        self.assertEqual(response.status_code, 200)
+#     def test_get_grouppurchase_feed_list(self):
+#         """공구 게시글 list get, 로그인 없이"""
+#         response = self.client.get(
+#             path=self.path4,
+#         )
+#         self.assertEqual(response.status_code, 200)
 
-    def test_get_grouppurchase_feed_detail(self):
-        """공구 게시글 상세 get, 로그인 없이"""
-        response = self.client.get(
-            path=self.path5,
-        )
-        self.assertEqual(response.status_code, 200)
+#     def test_get_grouppurchase_feed_detail(self):
+#         """공구 게시글 상세 get, 로그인 없이"""
+#         response = self.client.get(
+#             path=self.path5,
+#         )
+#         self.assertEqual(response.status_code, 200)
 
-    def test_get_grouppurchase_detail_fail(self):
-        """공구 게시글 상세 조회 실패"""
-        response = self.client.get(
-            path=reverse(
-                "grouppurchase_put_delete_view",
-                kwargs={
-                    "community_url": self.community.communityurl,
-                    "grouppurchase_id": 100,
-                },
-            )
-        )
-        self.assertEqual(response.status_code, 404)
+#     def test_get_grouppurchase_detail_fail(self):
+#         """공구 게시글 상세 조회 실패"""
+#         response = self.client.get(
+#             path=reverse(
+#                 "grouppurchase_put_delete_view",
+#                 kwargs={
+#                     "community_url": self.community.communityurl,
+#                     "grouppurchase_id": 100,
+#                 },
+#             )
+#         )
+#         self.assertEqual(response.status_code, 404)
 
-    def test_get_feed_detail_check_view_count(self):
-        """공구 게시글 상세 조회 시 조회수 +1"""
-        response = self.client.get(
-            path=self.path5,
-        )
-        self.assertEqual(response.data["grouppurchase"]["view_count"], 1)
+#     def test_get_feed_detail_check_view_count(self):
+#         """공구 게시글 상세 조회 시 조회수 +1"""
+#         response = self.client.get(
+#             path=self.path5,
+#         )
+#         self.assertEqual(response.data["grouppurchase"]["view_count"], 1)
 
-    def test_post_grouppurchase_join_success(self):
-        """공구 게시글 참여 성공"""
-        response = self.client.post(
-            path=self.path6,
-            data=self.join_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-        )
-        self.assertEqual(response.status_code, 201)
+#     def test_post_grouppurchase_join_success(self):
+#         """공구 게시글 참여 성공"""
+#         response = self.client.post(
+#             path=self.path6,
+#             data=self.join_data,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+#         )
+#         self.assertEqual(response.status_code, 201)
 
-    def test_post_grouppurchase_join_update(self):
-        """공구 게시글 참여 성공 후 수량 조절"""
-        response = self.client.post(
-            path=self.path6,
-            data=self.join_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-        )
+#     def test_post_grouppurchase_join_update(self):
+#         """공구 게시글 참여 성공 후 수량 조절"""
+#         response = self.client.post(
+#             path=self.path6,
+#             data=self.join_data,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+#         )
 
-        response2 = self.client.post(
-            path=self.path6,
-            data=self.join_data_update,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-        )
-        self.assertEqual(response2.data["message"], "공구 수량을 수정했습니다.")
-        self.assertEqual(response2.data["data"]["product_quantity"], 2)
-        self.assertEqual(response2.status_code, 202)
+#         response2 = self.client.post(
+#             path=self.path6,
+#             data=self.join_data_update,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+#         )
+#         self.assertEqual(response2.data["message"], "공구 수량을 수정했습니다.")
+#         self.assertEqual(response2.data["data"]["product_quantity"], 2)
+#         self.assertEqual(response2.status_code, 202)
 
-    def test_post_grouppurchase_join_update_zero(self):
-        """공구 게시글 참여 실패, 수량 0"""
-        response = self.client.post(
-            path=self.path6,
-            data=self.join_data_0,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-        )
-        self.assertEqual(response.status_code, 400)
+#     def test_post_grouppurchase_join_update_zero(self):
+#         """공구 게시글 참여 실패, 수량 0"""
+#         response = self.client.post(
+#             path=self.path6,
+#             data=self.join_data_0,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+#         )
+#         self.assertEqual(response.status_code, 400)
 
-    def test_post_grouppurchase_join_update_minus(self):
-        """공구 게시글 참여 실패, 수량 -1"""
-        response = self.client.post(
-            path=self.path6,
-            data=self.join_data_1,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-        )
-        self.assertEqual(response.data["message"], "수량을 다시 확인해주세요.")
-        self.assertEqual(response.status_code, 400)
+#     def test_post_grouppurchase_join_update_minus(self):
+#         """공구 게시글 참여 실패, 수량 -1"""
+#         response = self.client.post(
+#             path=self.path6,
+#             data=self.join_data_1,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+#         )
+#         self.assertEqual(response.data["message"], "수량을 다시 확인해주세요.")
+#         self.assertEqual(response.status_code, 400)
 
-    def test_post_grouppurchase_limit(self):
-        """공구 게시글 참여 limit 1명, 종료"""
-        response = self.client.post(
-            path=self.path7,
-            data=self.join_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(response.status_code, 201)
+#     def test_post_grouppurchase_limit(self):
+#         """공구 게시글 참여 limit 1명, 종료"""
+#         response = self.client.post(
+#             path=self.path7,
+#             data=self.join_data,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(response.status_code, 201)
 
-        # user2 참여
-        response = self.client.post(
-            path=self.path7,
-            data=self.join_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-        )
-        self.assertEqual(response.data["message"], "공구 인원이 모두 찼습니다!")
-        self.assertEqual(response.status_code, 405)
+#         # user2 참여
+#         response = self.client.post(
+#             path=self.path7,
+#             data=self.join_data,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+#         )
+#         self.assertEqual(response.data["message"], "공구 인원이 모두 찼습니다!")
+#         self.assertEqual(response.status_code, 405)
 
-    def test_post_grouppurchase_ended_join(self):
-        """공구 게시글 모집 완료된 게시글에 참여 실패"""
-        response = self.client.post(
-            path=self.path8,
-            data=self.join_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(response.status_code, 400)
+#     def test_post_grouppurchase_ended_join(self):
+#         """공구 게시글 모집 완료된 게시글에 참여 실패"""
+#         response = self.client.post(
+#             path=self.path8,
+#             data=self.join_data,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(response.status_code, 400)
 
-    def test_post_grouppurchase_join_quit(self):
-        """공구 게시글 참여 후 참여 취소"""
-        response = self.client.post(
-            path=self.path6,
-            data=self.join_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-        )
+#     def test_post_grouppurchase_join_quit(self):
+#         """공구 게시글 참여 후 참여 취소"""
+#         response = self.client.post(
+#             path=self.path6,
+#             data=self.join_data,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+#         )
 
-        response2 = self.client.post(
-            path=self.path6,
-            data=self.join_data_0,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-        )
-        self.assertEqual(response2.data["message"], "공구 신청을 취소했습니다.")
-        self.assertEqual(response2.status_code, 202)
+#         response2 = self.client.post(
+#             path=self.path6,
+#             data=self.join_data_0,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+#         )
+#         self.assertEqual(response2.data["message"], "공구 신청을 취소했습니다.")
+#         self.assertEqual(response2.status_code, 202)
 
-    def test_post_grouppurchase_re_join(self):
-        """공구 게시글 참여 취소 후 재참여"""
-        response = self.client.post(
-            path=self.path6,
-            data=self.join_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-        )
+#     def test_post_grouppurchase_re_join(self):
+#         """공구 게시글 참여 취소 후 재참여"""
+#         response = self.client.post(
+#             path=self.path6,
+#             data=self.join_data,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+#         )
 
-        response2 = self.client.post(
-            path=self.path6,
-            data=self.join_data_0,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-        )
+#         response2 = self.client.post(
+#             path=self.path6,
+#             data=self.join_data_0,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+#         )
 
-        response3 = self.client.post(
-            path=self.path6,
-            data=self.join_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
-        )
-        self.assertEqual(response3.data["message"], "공구를 재 신청했습니다.")
-        self.assertEqual(response3.status_code, 202)
+#         response3 = self.client.post(
+#             path=self.path6,
+#             data=self.join_data,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token2}",
+#         )
+#         self.assertEqual(response3.data["message"], "공구를 재 신청했습니다.")
+#         self.assertEqual(response3.status_code, 202)
 
-    # comment CRD test
-    def test_create_grouppurchase_comment(self):
-        """공구 게시글 comment 생성"""
-        response = self.client.post(
-            path=self.path10,
-            data=self.purchase_comment_data,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(response.status_code, 201)
+#     # comment CRD test
+#     def test_create_grouppurchase_comment(self):
+#         """공구 게시글 comment 생성"""
+#         response = self.client.post(
+#             path=self.path10,
+#             data=self.purchase_comment_data,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(response.status_code, 201)
 
-    def test_create_comment_no_user(self):
-        """공구 댓글 수정 시 user 없음"""
-        response = self.client.post(path=self.path10, data=self.purchase_comment_data2)
-        self.assertEqual(response.status_code, 401)
+#     def test_create_comment_no_user(self):
+#         """공구 댓글 수정 시 user 없음"""
+#         response = self.client.post(path=self.path10, data=self.purchase_comment_data2)
+#         self.assertEqual(response.status_code, 401)
 
-    def test_update_grouppurchase_comment(self):
-        """공구 게시글 comment 수정"""
-        response = self.client.put(
-            path=self.path11,
-            data=self.purchase_comment_data2,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(response.data["message"], "공구 댓글을 수정했습니다.")
-        self.assertEqual(response.status_code, 200)
+#     def test_update_grouppurchase_comment(self):
+#         """공구 게시글 comment 수정"""
+#         response = self.client.put(
+#             path=self.path11,
+#             data=self.purchase_comment_data2,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(response.data["message"], "공구 댓글을 수정했습니다.")
+#         self.assertEqual(response.status_code, 200)
 
-    def test_update_comment_no_user(self):
-        response = self.client.put(path=self.path10, data=self.purchase_comment_data2)
-        self.assertEqual(response.status_code, 401)
+#     def test_update_comment_no_user(self):
+#         response = self.client.put(path=self.path10, data=self.purchase_comment_data2)
+#         self.assertEqual(response.status_code, 401)
 
-    def test_update_grouppurchase_comment_no_text(self):
-        """공구 댓글 수정 시 text 없음"""
-        response = self.client.put(
-            path=self.path11,
-            data={
-                "text": "",
-            },
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(response.status_code, 400)
+#     def test_update_grouppurchase_comment_no_text(self):
+#         """공구 댓글 수정 시 text 없음"""
+#         response = self.client.put(
+#             path=self.path11,
+#             data={
+#                 "text": "",
+#             },
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(response.status_code, 400)
 
-    def test_update_grouppurchase_comment_not_matched_user(self):
-        """공구 게시글 comment 수정 실패, 권한없는 유저"""
-        response = self.client.put(
-            path=self.path11,
-            data=self.purchase_comment_data2,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token3}",
-        )
-        self.assertEqual(response.status_code, 403)
+#     def test_update_grouppurchase_comment_not_matched_user(self):
+#         """공구 게시글 comment 수정 실패, 권한없는 유저"""
+#         response = self.client.put(
+#             path=self.path11,
+#             data=self.purchase_comment_data2,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token3}",
+#         )
+#         self.assertEqual(response.status_code, 403)
 
-    def test_delete_comment(self):
-        """공구 게시글 comment 삭제"""
-        response = self.client.delete(
-            path=self.path11,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
-        )
-        self.assertEqual(response.status_code, 200)
+#     def test_delete_comment(self):
+#         """공구 게시글 comment 삭제"""
+#         response = self.client.delete(
+#             path=self.path11,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token}",
+#         )
+#         self.assertEqual(response.status_code, 200)
 
-    def test_delete_comment_no_user(self):
-        """공구 게시글 comment 삭제, 미 로그인 시"""
-        response = self.client.delete(
-            path=self.path11,
-        )
-        self.assertEqual(response.status_code, 401)
+#     def test_delete_comment_no_user(self):
+#         """공구 게시글 comment 삭제, 미 로그인 시"""
+#         response = self.client.delete(
+#             path=self.path11,
+#         )
+#         self.assertEqual(response.status_code, 401)
 
-    def test_delete_comment_not_matched_user(self):
-        """공구 게시글 comment 삭제, 권한없는 유저"""
-        response = self.client.delete(
-            path=self.path11,
-            HTTP_AUTHORIZATION=f"Bearer {self.access_token3}",
-        )
-        self.assertEqual(response.status_code, 403)
+#     def test_delete_comment_not_matched_user(self):
+#         """공구 게시글 comment 삭제, 권한없는 유저"""
+#         response = self.client.delete(
+#             path=self.path11,
+#             HTTP_AUTHORIZATION=f"Bearer {self.access_token3}",
+#         )
+#         self.assertEqual(response.status_code, 403)
