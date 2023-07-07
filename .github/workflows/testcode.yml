@@ -2,7 +2,7 @@ name: Django_Test
 
 on:
   push:
-    branches: [ "main","development" ]
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -33,3 +33,20 @@ jobs:
         poetry run python manage.py makemigrations
         poetry run python manage.py migrate
         poetry run python manage.py test
+        
+    - name: Update code & Deploy
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.REMOTE_IP }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: "${{ secrets.MAKEBFFS }}"
+        port: ${{ secrets.REMOTE_SSH_PORT }}
+        script: |
+          echo "${{secrets.MAKEBFFS}}" >> $HOME/makebffs.pem
+          chmod 600 $HOME/makebffs.pem
+          ssh -i $HOME/makebffs.pem -o StrictHostKeyChecking=no ${{ secrets.EC2_IP }}
+          cd /home/ubuntu/backend/django/
+          git pull origin main
+          cd /home/ubuntu/
+          sudo docker compose up --build -d
+          sudo docker compose restart

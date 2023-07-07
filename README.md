@@ -78,7 +78,7 @@
 
 <div align="center">
   <h2>🌳 BFF ERD</h2>
-        <img src="https://ifh.cc/g/RYrpzy.jpg" alt="bff_CI/CD">
+        <img src="https://ifh.cc/g/YSWPh2.jpg" alt="bff_CI/CD">
 </div>
 
 <div align="center">
