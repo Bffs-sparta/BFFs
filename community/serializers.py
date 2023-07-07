@@ -4,7 +4,7 @@ from decouple import config
 
 from user.models import User
 from feed.models import Feed, Category, GroupPurchase
-from feed.serializers import FeedTitleSerializer
+from feed.serializers import FeedListSerializer, FeedTitleSerializer
 from .models import Community, CommunityAdmin, ForbiddenWord
 from .validators import can_only_eng_int_underbar_and_hyphen
 
@@ -62,7 +62,7 @@ class CommunitySerializer(serializers.ModelSerializer):
 
     def get_feeds(self, obj):
         feeds = Feed.objects.filter(category__community=obj)
-        feed = FeedTitleSerializer(feeds, many=True)
+        feed = FeedListSerializer(feeds, many=True)
         return feed.data
 
     def get_admin(self, obj):
@@ -159,6 +159,55 @@ class CommunityCreateSerializer(serializers.ModelSerializer):
     def get_is_bookmarked(self, obj):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
+            return obj.bookmarked.filter(id=request.user.id).exists()
+        return False
+
+
+class CommunityListSerializer(serializers.ModelSerializer):
+    imageurl = serializers.SerializerMethodField()
+    categories = serializers.SerializerMethodField()
+    feeds = serializers.SerializerMethodField()
+    bookmarked = serializers.SerializerMethodField()
+    is_bookmarked = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Community
+        fields = [
+            "id",
+            "title",
+            "introduction",
+            "communityurl",
+            "image",
+            "imageurl",
+            "is_approval",
+            "categories",
+            "feeds",
+            "bookmarked",
+            "is_bookmarked",
+        ]
+
+    def get_imageurl(self, obj):
+        return config("BACKEND_URL") + "/media/" + str(obj.image)
+
+    def get_categories(self, obj):
+        categories = obj.community_category.all()
+        category_name_list = [
+            [category.id, category.category_name, category.category_url]
+            for category in categories
+        ]
+        return category_name_list
+
+    def get_feeds(self, obj):
+        feeds = Feed.objects.filter(category__community=obj)
+        feed = FeedTitleSerializer(feeds, many=True)
+        return feed.data
+
+    def get_bookmarked(self, obj):
+        return obj.bookmarked.count()
+
+    def get_is_bookmarked(self, obj):
+        request = self.context.get("request")
+        if request.user and request.user.is_authenticated:
             return obj.bookmarked.filter(id=request.user.id).exists()
         return False
 

@@ -18,6 +18,7 @@ from .serializers import (
     CommunityUpdateSerializer,
     CommunityAdminCreateSerializer,
     ForbiddenWordSerializer,
+    CommunityListSerializer,
 )
 
 
@@ -26,8 +27,8 @@ class CommunityView(APIView):
 
     def get(self, request):
         """커뮤니티 조회 및 북마크, 어드민 조회"""
-        communities = Community.objects.all()
-        serializer = CommunitySerializer(
+        communities = Community.objects.all().order_by("?")
+        serializer = CommunityListSerializer(
             communities, context={"request": request}, many=True
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -249,7 +250,7 @@ class SearchCommunityView(ListAPIView):
     """커뮤니티 조회 및 검색"""
 
     queryset = Community.objects.all()
-    serializer_class = CommunitySerializer
+    serializer_class = CommunityListSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ["title", "communityurl", "introduction"]
     pagination_class = None
